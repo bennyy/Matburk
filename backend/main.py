@@ -56,6 +56,33 @@ def seed_placeholders():
                 )
                 db.add(new_placeholder)
 
+        recept = [
+            {"name": "Spaghetti Bolognese", "tags": "Italienskt, Pasta"},
+            {"name": "Kyckling Curry", "tags": "Asiatiskt, Kryddigt"},
+            {"name": "Vegetarisk Lasagne", "tags": "Italienskt, Vegetariskt"},
+            {"name": "Tacos", "tags": "Mexikanskt, Snabbt"},
+            {"name": "Lax med Citron och Dill", "tags": "Fisk, Hälsosamt"},
+            {"name": "Grillad Ostsmörgås", "tags": "Snabbt, Vegetariskt"},
+            {"name": "Caesarsallad", "tags": "Sallad, Lätt"},
+            {"name": "Chili con Carne", "tags": "Kryddigt, Gryta"},
+            {"name": "Pannkakor", "tags": "Sött, Frukost"},
+            {"name": "Sushi Bowl", "tags": "Japanskt, Hälsosamt"}
+        ]
+
+        for item in recept:
+            exists = db.query(models.RecipeDB).filter(
+                models.RecipeDB.name == item["name"],
+                models.RecipeDB.is_test_recipe == True
+            ).first()
+            if not exists:
+                new_test_recipe = models.RecipeDB(
+                    name=item["name"],
+                    tags=item["tags"],
+                    default_portions=4,
+                    is_placeholder=False,
+                    is_test_recipe=True
+                )
+                db.add(new_test_recipe)
         db.commit()
         print("✅ Platshållare kontrollerade/skapade.")
 

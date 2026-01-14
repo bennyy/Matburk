@@ -1,50 +1,88 @@
-import React, { useState } from 'react';
-import TagInput from './TagInput';
+import { useState, useCallback } from 'react';
 import axios from 'axios';
+// eslint-disable-next-line no-unused-vars
+import TagInput from './TagInput';
 
-const AddRecipe = ({ onAdded, apiUrl }) => {
+/**
+ * AddRecipe - Form for creating new recipes
+ *
+ * Handles recipe creation with:
+ * - Basic info (name, portions)
+ * - Tags, notes, and recipe link
+ * - Image upload (file or URL)
+ * - Form submission and validation
+ */
+export default function AddRecipe({ onAdded, apiUrl }) {
+  // ========== STATE MANAGEMENT ==========
   const [name, setName] = useState('');
   const [portions, setPortions] = useState(4);
   const [tags, setTags] = useState('');
-  const [notes, setNotes] = useState(''); // <--- Ny state
-  const [link, setLink] = useState(''); // <--- Ny state (valfritt, men bra att ha)
+  const [notes, setNotes] = useState('');
+  const [link, setLink] = useState('');
   const [file, setFile] = useState(null);
-  const [isLoading, setIsLoading] = useState(false);
   const [imageUrl, setImageUrl] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setIsLoading(true);
+  // ========== HANDLERS ==========
+  /**
+   * Reset form fields to initial state
+   */
+  const resetForm = useCallback(() => {
+    setName('');
+    setPortions(4);
+    setTags('');
+    setNotes('');
+    setLink('');
+    setFile(null);
+    setImageUrl('');
+  }, []);
 
-    const formData = new FormData();
-    formData.append('name', name);
-    formData.append('portions', portions);
-    formData.append('tags', tags);
-    formData.append('notes', notes); // <--- Skicka med notes
-    if (link) formData.append('link', link);
-    if (file) formData.append('file', file);
-    if (imageUrl) formData.append('image_url', imageUrl);
+  /**
+   * Handle form submission - POST new recipe to backend
+   */
+  const handleSubmit = useCallback(
+    async (e) => {
+      e.preventDefault();
+      setIsLoading(true);
 
-    try {
-      await axios.post(`${apiUrl}/recipes`, formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      });
+      const formData = new FormData();
+      formData.append('name', name);
+      formData.append('portions', portions);
+      formData.append('tags', tags);
+      formData.append('notes', notes);
+      if (link) formData.append('link', link);
+      if (file) formData.append('file', file);
+      if (imageUrl) formData.append('image_url', imageUrl);
 
-      // Återställ formulär
-      setName('');
-      setTags('');
-      setNotes('');
-      setLink('');
-      setFile(null);
-      onAdded(); // Stäng modalen och uppdatera listan
-    } catch (error) {
-      console.error('Fel vid sparande', error);
-      alert('Kunde inte spara receptet.');
-    } finally {
-      setIsLoading(false);
-    }
-  };
+      try {
+        await axios.post(`${apiUrl}/recipes`, formData, {
+          headers: { 'Content-Type': 'multipart/form-data' },
+        });
 
+        resetForm();
+        onAdded();
+      } catch (error) {
+        console.error('Error saving recipe:', error);
+        alert('Kunde inte spara receptet.');
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [
+      name,
+      portions,
+      tags,
+      notes,
+      link,
+      file,
+      imageUrl,
+      apiUrl,
+      onAdded,
+      resetForm,
+    ]
+  );
+
+  // ========== RENDER ==========
   return (
     <form
       onSubmit={handleSubmit}
@@ -52,7 +90,7 @@ const AddRecipe = ({ onAdded, apiUrl }) => {
     >
       <h2 className="text-xl font-bold mb-2">Lägg till nytt recept</h2>
 
-      {/* Namn & Portioner */}
+      {/* Recipe Name & Portions */}
       <div className="flex gap-4">
         <div className="flex-1">
           <label className="block text-sm font-bold text-gray-700 mb-1">
@@ -64,6 +102,7 @@ const AddRecipe = ({ onAdded, apiUrl }) => {
             value={name}
             onChange={(e) => setName(e.target.value)}
             required
+            aria-label="Receptets namn"
           />
         </div>
         <div className="w-24">
@@ -75,11 +114,12 @@ const AddRecipe = ({ onAdded, apiUrl }) => {
             className="w-full border p-2 rounded focus:ring-2 focus:ring-blue-500 outline-none"
             value={portions}
             onChange={(e) => setPortions(e.target.value)}
+            aria-label="Antal portioner"
           />
         </div>
       </div>
 
-      {/* Taggar */}
+      {/* Tags */}
       <div>
         <label className="block text-sm font-bold text-gray-700 mb-1">
           Taggar (komma-separerade)
@@ -91,7 +131,7 @@ const AddRecipe = ({ onAdded, apiUrl }) => {
         />
       </div>
 
-      {/* Länk (Valfritt) */}
+      {/* Recipe Link */}
       <div>
         <label className="block text-sm font-bold text-gray-700 mb-1">
           Länk till recept (valfritt)
@@ -102,10 +142,11 @@ const AddRecipe = ({ onAdded, apiUrl }) => {
           placeholder="https://..."
           value={link}
           onChange={(e) => setLink(e.target.value)}
+          aria-label="Länk till originalrecept"
         />
       </div>
 
-      {/* Anteckningar */}
+      {/* Notes */}
       <div>
         <label className="block text-sm font-bold text-gray-700 mb-1">
           Anteckningar
@@ -115,22 +156,25 @@ const AddRecipe = ({ onAdded, apiUrl }) => {
           placeholder="T.ex. 'Använd extra mycket vitlök' eller 'Barnen gillar inte persiljan'"
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
+          aria-label="Anteckningar om receptet"
         />
       </div>
 
-      {/* Bild */}
+      {/* Image Upload */}
       <div>
         <label className="block text-sm font-bold text-gray-700 mb-1">
           Bild
         </label>
         <input
           type="file"
+          accept="image/*"
           className="block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
           onChange={(e) => setFile(e.target.files[0])}
+          aria-label="Ladda upp receptbild"
         />
       </div>
 
-      {/* Bild URL */}
+      {/* Image URL */}
       <div>
         <label className="block text-sm font-bold text-gray-700 mb-1">
           Eller klistra in bildlänk
@@ -141,18 +185,21 @@ const AddRecipe = ({ onAdded, apiUrl }) => {
           placeholder="https://exempel.se/bild.jpg"
           value={imageUrl}
           onChange={(e) => setImageUrl(e.target.value)}
+          aria-label="URL till receptbild"
         />
       </div>
 
+      {/* Submit Button */}
       <button
         type="submit"
         disabled={isLoading}
-        className={`bg-green-600 text-white px-4 py-3 rounded font-bold hover:bg-green-700 transition-colors ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+        className={`bg-green-600 text-white px-4 py-3 rounded font-bold hover:bg-green-700 transition-colors ${
+          isLoading ? 'opacity-50 cursor-not-allowed' : ''
+        }`}
+        aria-label="Spara nytt recept"
       >
         {isLoading ? 'Sparar...' : 'Spara Recept'}
       </button>
     </form>
   );
-};
-
-export default AddRecipe;
+}

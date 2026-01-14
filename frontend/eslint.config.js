@@ -11,18 +11,24 @@ export default [
   // React-specifik config
   {
     files: ['**/*.{js,jsx}'], // Kör för JS och JSX
-    plugins: {
-      react,
-      'react-hooks': reactHooks,
-    },
     languageOptions: {
       ecmaVersion: 'latest',
       sourceType: 'module',
+      globals: {
+        console: 'readonly',
+        alert: 'readonly',
+        FormData: 'readonly',
+        window: 'readonly',
+      },
       parserOptions: {
         ecmaFeatures: {
           jsx: true, // Viktigt för JSX-parsing
         },
       },
+    },
+    plugins: {
+      react,
+      'react-hooks': reactHooks,
     },
     settings: {
       react: {

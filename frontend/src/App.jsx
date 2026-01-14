@@ -14,6 +14,7 @@ function App() {
   const [recipes, setRecipes] = useState([]);
   const [plan, setPlan] = useState([]);
   const [showAddModal, setShowAddModal] = useState(false);
+  const [showCalendar, setShowCalendar] = useState(true);
 
   // Håll koll på vilken vecka vi tittar på (startar alltid måndag)
   const [currentWeekStart, setCurrentWeekStart] = useState(
@@ -117,6 +118,15 @@ function App() {
             ⚙️
           </button>
 
+          {/* TOGGLE CALENDAR BUTTON */}
+          <button
+            onClick={() => setShowCalendar(!showCalendar)}
+            className="bg-slate-700 hover:bg-slate-600 p-2 rounded text-white"
+            title={showCalendar ? 'Dölj kalender' : 'Visa kalender'}
+          >
+            {showCalendar ? '▶' : '◀'}
+          </button>
+
           <button
             onClick={() => setShowAddModal(!showAddModal)}
             className="bg-green-600 hover:bg-green-700 px-4 py-2 rounded font-bold text-sm"
@@ -167,6 +177,8 @@ function App() {
           onPrevWeek={prevWeek}
           onGoToday={goToday}
           peopleNames={peopleNames} // <--- SKICKA NER HÄR
+          showCalendar={showCalendar}
+          setShowCalendar={setShowCalendar}
         />
       </main>
     </div>
