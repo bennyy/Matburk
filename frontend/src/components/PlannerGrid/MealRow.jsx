@@ -1,5 +1,5 @@
 import { format } from 'date-fns';
-// eslint-disable-next-line no-unused-vars
+
 import MealSlot from './MealSlot';
 
 /**
@@ -14,6 +14,7 @@ export default function MealRow({
   recipes,
   selectedBatchId,
   onSlotClick,
+  isPlannerLocked,
 }) {
   return (
     <div className="flex-1 flex flex-col">
@@ -45,7 +46,10 @@ export default function MealRow({
               recipe={recipe}
               isActive={isActive}
               isPlaceholder={isPlaceholder}
-              onClick={() => onSlotClick(day, meal, personKey)}
+              onClick={() =>
+                !isPlannerLocked && onSlotClick(day, meal, personKey)
+              }
+              isLocked={isPlannerLocked}
             />
           );
         })}

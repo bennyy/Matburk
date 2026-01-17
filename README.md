@@ -39,7 +39,7 @@ A full-stack web application for weekly meal planning, specifically designed for
 - **Framework:** FastAPI
 - **Database:** SQLite (local file: `matplanerare.db`)
 - **ORM:** SQLAlchemy
-- **Image Handling:** Stores uploads locally in `backend/static/images`.
+- **Image Handling:** Stores uploads locally in `backend/uploads` (served at `/images`).
 
 ### Frontend
 
@@ -60,7 +60,7 @@ root/
 │   ├── models.py         # SQLAlchemy Database Models
 │   ├── schemas.py        # Pydantic Response/Request Models
 │   ├── database.py       # DB Connection setup
-│   └── static/images/    # User uploaded images
+│   └── uploads/          # User uploaded images (mounted at /images)
 ├── frontend/
 │   ├── src/
 │   │   ├── components/
@@ -82,20 +82,24 @@ root/
 
 ### 1. Recipes (`recipes` table)
 
-| Field              | Type    | Description                                    |
-| ------------------ | ------- | ---------------------------------------------- |
-| `id`               | Integer | Primary Key                                    |
-| `name`             | String  | Recipe title                                   |
-| `default_portions` | Integer | Default: 4                                     |
-| `tags`             | String  | Comma-separated string (e.g., "Pasta, Quick")  |
-| `notes`            | String  | User notes/reminders                           |
-| `image_filename`   | String  | Local filename (Priority 1)                    |
-| `image_url`        | String  | External URL (Priority 2)                      |
-| `link`             | String  | External link to recipe source                 |
-| `is_placeholder`   | Boolean | If True: Special handling for "Takeaway", etc. |
-| `is_deleted`       | Boolean | Soft delete flag                               |
-| `last_cooked_date` | Date    | Auto-updated when planned                      |
-| `vote_count`       | Integer | "Likes"                                        |
+| Field              | Type     | Description                                    |
+| ------------------ | -------- | ---------------------------------------------- |
+| `id`               | Integer  | Primary Key                                    |
+| `name`             | String   | Recipe title                                   |
+| `default_portions` | Integer  | Default: 4                                     |
+| `notes`            | String   | User notes/reminders                           |
+| `link`             | String   | External link to recipe source                 |
+| `image_filename`   | String   | Local filename (Priority 1)                    |
+| `image_url`        | String   | External URL (Priority 2)                      |
+| `is_placeholder`   | Boolean  | If True: Special handling for "Takeaway", etc. |
+| `is_test_recipe`   | Boolean  | Seed/test fixture flag                         |
+| `is_deleted`       | Boolean  | Soft delete flag                               |
+| `last_cooked_date` | Date     | Auto-updated when planned                      |
+| `vote_count`       | Integer  | "Likes"                                        |
+| `created_at`       | DateTime | Insert timestamp                               |
+| `updated_at`       | DateTime | Update timestamp                               |
+
+Tags are stored in a separate `tags` table with a many-to-many `recipe_tags` join. API responses return tag objects.
 
 ### 2. Planning Slots (`plan_slots` table)
 
@@ -122,9 +126,9 @@ Key-Value store for global app configuration.
 
 ### Library View
 
-- **View Modes:**
-- _Compact:_ Minimal height, small thumbnails, essential info only.
-- _Detailed:_ Larger layout, large thumbnails, full tags, "Last cooked" date, notes indicator.
+- **View Modes:** Minimal, Compact, Detailed (toggleable in UI).
+- **Tag Filter:** Optional filter panel to narrow by tags.
+- **Quick Add:** Placeholder "Snabbval" recipes surface first for fast planning.
 
 - **Image Fallback Strategy:**
 
@@ -139,19 +143,21 @@ Key-Value store for global app configuration.
 
 ### CRUD & State
 
-- **Tags:** Handled via a custom `TagInput` component that converts text input (Enter/Comma) into visual chips, but saves as a CSV string to DB.
+- **Tags:** Managed via a `TagInput` component; stored as tag rows (not CSV) and returned as tag objects.
 - **Soft Delete:** Deleting a recipe sets `is_deleted = True`. It remains in the DB but is filtered out of the API response.
+- **Week Lock:** Weeks can be locked/unlocked in the UI to prevent accidental edits.
 
 ---
 
 ## ⚡️ API Endpoints
 
-- `GET /recipes` (params: `sort_by`, `sort_order`)
-- `POST /recipes`
-- `PUT /recipes/{id}`
-- `DELETE /recipes/{id}` (Soft delete)
-- `GET /plan` (params: `start_date`, `end_date`)
-- `POST /plan` (Upsert slot)
+- `GET /recipes` params: `sort_by` (`vote`, `name`, `last_cooked`, `total_meals`, `created`), `sort_order` (`asc`/`desc`)
+- `POST /recipes` (multipart form; optional file upload)
+- `PUT /recipes/{id}` (multipart form; optional file upload)
+- `PUT /recipes/{id}/vote` (increment vote_count)
+- `DELETE /recipes/{id}` (soft delete)
+- `GET /plan` params: `start_date`, `end_date`
+- `POST /plan` (upsert a slot)
 - `GET /settings`
 - `POST /settings`
 
@@ -164,14 +170,16 @@ Key-Value store for global app configuration.
 1. Navigate to `backend/`.
 2. Create virtual env: `python -m venv venv`
 3. Activate: `source venv/bin/activate` (Mac/Linux) or `venv\Scripts\activate` (Win)
-4. Install deps: `pip install fastapi uvicorn sqlalchemy python-multipart`
-5. Run: `uvicorn main:app --reload`
+4. Install deps: `pip install -r requirements.txt`
+5. Run: `./run.sh` (prefers local venv and starts `uvicorn main:app --reload`)
 
 ### Frontend
 
 1. Navigate to `frontend/`.
 2. Install deps: `npm install`
 3. Run: `npm run dev -- --host`
+
+From repository root you can also run `npm run dev` to start the frontend with the configured prefix script.
 
 ---
 

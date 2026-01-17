@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import axios from 'axios';
-// eslint-disable-next-line no-unused-vars
+
 import TagInput from './TagInput';
 
 /**
@@ -16,7 +16,14 @@ export default function EditRecipe({ recipe, apiUrl, onUpdated, onCancel }) {
   // ========== STATE MANAGEMENT ==========
   const [name, setName] = useState(recipe.name);
   const [portions, setPortions] = useState(recipe.default_portions);
-  const [tags, setTags] = useState(recipe.tags || '');
+  // Convert tag objects to comma-separated string for editing
+  const [tags, setTags] = useState(
+    recipe.tags && Array.isArray(recipe.tags)
+      ? recipe.tags
+          .map((tag) => (typeof tag === 'string' ? tag : tag.name))
+          .join(', ')
+      : recipe.tags || ''
+  );
   const [notes, setNotes] = useState(recipe.notes || '');
   const [link, setLink] = useState(recipe.link || '');
   const [file, setFile] = useState(null);

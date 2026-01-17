@@ -6,10 +6,11 @@
     "eslint-plugin-react-hooks": "^7.0.1",
     "prettier": "^3.7.4"
   },
-    "scripts": {
-    "lint": "eslint frontend/src",
-    "lint:fix": "eslint frontend/src --fix",
-    "format": "prettier --write src",
-    "format:check": "prettier --check src"
+  "scripts": {
+    "dev": "npm --prefix frontend run dev -- --host",
+    "lint": "eslint --config frontend/eslint.config.js frontend/src",
+    "lint:fix": "eslint --config frontend/eslint.config.js frontend/src --fix",
+    "format": "prettier --write frontend/src",
+    "format:check": "prettier --check frontend/src"
   }
 }

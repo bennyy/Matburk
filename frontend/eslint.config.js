@@ -17,6 +17,7 @@ export default [
       globals: {
         console: 'readonly',
         alert: 'readonly',
+        document: 'readonly',
         FormData: 'readonly',
         window: 'readonly',
       },
@@ -37,6 +38,7 @@ export default [
     },
     rules: {
       'react/react-in-jsx-scope': 'off', // React 17+ behöver ej import React
+      'react/jsx-uses-vars': 'error',
       'react-hooks/rules-of-hooks': 'error', // Hooks måste följas strikt
       'react-hooks/exhaustive-deps': 'warn', // Missing deps i useEffect
     },

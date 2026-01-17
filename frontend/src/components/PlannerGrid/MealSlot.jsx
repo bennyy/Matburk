@@ -7,8 +7,14 @@ export default function MealSlot({
   isActive,
   isPlaceholder,
   onClick,
+  isLocked,
 }) {
   const getSlotStyle = () => {
+    if (isLocked) {
+      return isPlaceholder
+        ? 'bg-amber-50 border-amber-200 text-amber-900 hover:bg-amber-100 italic'
+        : 'bg-green-50 border-green-200 text-gray-800 hover:bg-green-100';
+    }
     if (isActive) {
       return 'bg-blue-600 text-white border-blue-600 ring-2 ring-blue-300 ring-inset';
     }
@@ -23,9 +29,11 @@ export default function MealSlot({
   return (
     <div
       onClick={onClick}
-      className={`flex-1 min-w-0 rounded border flex flex-col items-center justify-center p-1 text-center cursor-pointer transition-colors ${getSlotStyle()}`}
+      className={`flex-1 min-w-0 rounded border flex flex-col items-center justify-center p-1 text-center transition-colors ${
+        isLocked ? 'cursor-not-allowed opacity-90' : 'cursor-pointer'
+      } ${getSlotStyle()}`}
       role="button"
-      tabIndex={0}
+      tabIndex={isLocked ? -1 : 0}
       aria-label={`${recipe ? recipe.name : displayName} - ${displayName}`}
     >
       {recipe ? (
@@ -35,7 +43,11 @@ export default function MealSlot({
           </div>
           <div
             className={`text-[9px] mt-0.5 ${
-              isActive ? 'text-blue-200' : 'text-gray-400'
+              isLocked
+                ? 'text-gray-400'
+                : isActive
+                  ? 'text-blue-200'
+                  : 'text-gray-400'
             }`}
           >
             {displayName}

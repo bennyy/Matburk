@@ -1,61 +1,76 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
-import { startOfWeek, endOfWeek, format, addWeeks, subWeeks } from 'date-fns'; // <--- Nya imports
+import { startOfWeek, endOfWeek, format, addWeeks, subWeeks } from 'date-fns';
 import PlannerGrid from './components/PlannerGrid';
 import AddRecipe from './components/AddRecipe';
-import SettingsModal from './components/SettingsModal'; // <--- IMPORTERA
+import SettingsModal from './components/SettingsModal';
 
-import { Settings } from 'lucide-react'; // Om du vill ha en ikon, annars text
+// removed unused `Settings` import from lucide-react
 
-// Kom ihåg att byta till din IP om localhost krånglar i WSL!
+/**
+ * App - top-level application component for the meal planner.
+ *
+ * Responsibilities:
+ * - Fetch recipes and weekly plan from the backend
+ * - Maintain app-level state (recipes, plan, UI modals)
+ * - Provide handlers to child components for updating the plan
+ *
+ * Note: If running in WSL/containers, adjust `API_URL` accordingly.
+ */
 const API_URL = 'http://localhost:8000';
 
 function App() {
   const [recipes, setRecipes] = useState([]);
   const [plan, setPlan] = useState([]);
   const [showAddModal, setShowAddModal] = useState(false);
-  const [showCalendar, setShowCalendar] = useState(true);
+  const [mealPlanner, setMealPlanner] = useState(true);
 
-  // Håll koll på vilken vecka vi tittar på (startar alltid måndag)
+  // Current week's start date (Monday is start of week)
   const [currentWeekStart, setCurrentWeekStart] = useState(
     startOfWeek(new Date(), { weekStartsOn: 1 })
   );
 
-  // --- NYTT: Vi flyttar sorterings-state hit upp ---
-  const [sortField, setSortField] = useState('vote');
+  // Sorting state for the recipe list
+  const [sortField, setSortField] = useState('total_meals');
   const [sortOrder, setSortOrder] = useState('desc');
 
   const [peopleNames, setPeopleNames] = useState({
     A: 'Person A',
     B: 'Person B',
-  }); // <--- NY STATE
-  const [showSettings, setShowSettings] = useState(false); // <--- NY STATE
+  });
+  const [showSettings, setShowSettings] = useState(false);
 
-  // --- UPPDATERAD: fetchData använder nu argumenten (eller defaults) ---
-  const fetchData = async (field = sortField, order = sortOrder) => {
-    try {
-      // Vi använder parametrarna som skickas in, så vi alltid får det senaste
-      const recipeRes = await axios.get(
-        `${API_URL}/recipes?sort_by=${field}&sort_order=${order}`
-      );
-      setRecipes(recipeRes.data);
+  /**
+   * fetchData - load recipes and the plan for the current week.
+   * @param {string} field sort field (defaults to `sortField`)
+   * @param {string} order sort order (defaults to `sortOrder`)
+   */
+  const fetchData = useCallback(
+    async (field = sortField, order = sortOrder) => {
+      try {
+        const recipeRes = await axios.get(
+          `${API_URL}/recipes?sort_by=${field}&sort_order=${order}`
+        );
+        setRecipes(recipeRes.data);
 
-      const startStr = format(currentWeekStart, 'yyyy-MM-dd');
-      const endStr = format(
-        endOfWeek(currentWeekStart, { weekStartsOn: 1 }),
-        'yyyy-MM-dd'
-      );
+        const startStr = format(currentWeekStart, 'yyyy-MM-dd');
+        const endStr = format(
+          endOfWeek(currentWeekStart, { weekStartsOn: 1 }),
+          'yyyy-MM-dd'
+        );
 
-      const planRes = await axios.get(
-        `${API_URL}/plan?start_date=${startStr}&end_date=${endStr}`
-      );
-      setPlan(planRes.data);
-    } catch (error) {
-      console.error('Error fetching data', error);
-    }
-  };
+        const planRes = await axios.get(
+          `${API_URL}/plan?start_date=${startStr}&end_date=${endStr}`
+        );
+        setPlan(planRes.data);
+      } catch (error) {
+        console.error('Error fetching data', error);
+      }
+    },
+    [currentWeekStart, sortField, sortOrder]
+  );
 
-  // Hämta inställningar vid start
+  // Load settings on mount
   useEffect(() => {
     const fetchSettings = async () => {
       try {
@@ -68,11 +83,15 @@ function App() {
     fetchSettings();
   }, []);
 
-  // Uppdatera när veckan byts
+  // Reload data whenever `fetchData` changes (covers week and sorting)
   useEffect(() => {
-    fetchData(sortField, sortOrder);
-  }, [currentWeekStart, sortField, sortOrder]);
+    fetchData();
+  }, [fetchData]);
 
+  /**
+   * Update one plan slot on the backend and refresh local data.
+   * @param {Object} slotData slot payload for the API
+   */
   const handleUpdateSlot = async (slotData) => {
     try {
       await axios.post(`${API_URL}/plan`, slotData);
@@ -82,17 +101,21 @@ function App() {
     }
   };
 
+  /**
+   * Increment vote count for a recipe and refresh recipes.
+   * @param {number} id recipe id
+   */
   const handleVote = async (id) => {
     await axios.put(`${API_URL}/recipes/${id}/vote`);
     fetchData();
   };
 
-  // När vi sparar ett nytt recept eller uppdaterar, vill vi ladda om med nuvarande sortering
+  // Refresh recipes and plan with current sorting
   const handleRefresh = () => {
     fetchData(sortField, sortOrder);
   };
 
-  // --- NYA FUNKTIONER FÖR NAVIGERING ---
+  // Week navigation helpers
   const nextWeek = () => setCurrentWeekStart(addWeeks(currentWeekStart, 1));
   const prevWeek = () => setCurrentWeekStart(subWeeks(currentWeekStart, 1));
   const goToday = () =>
@@ -109,7 +132,7 @@ function App() {
         </div>
 
         <div className="flex gap-2">
-          {/* INSTÄLLNINGSKNAPP */}
+          {/* Settings button */}
           <button
             onClick={() => setShowSettings(true)}
             className="bg-slate-700 hover:bg-slate-600 p-2 rounded text-white"
@@ -118,15 +141,16 @@ function App() {
             ⚙️
           </button>
 
-          {/* TOGGLE CALENDAR BUTTON */}
+          {/* Toggle meal planner */}
           <button
-            onClick={() => setShowCalendar(!showCalendar)}
+            onClick={() => setMealPlanner(!mealPlanner)}
             className="bg-slate-700 hover:bg-slate-600 p-2 rounded text-white"
-            title={showCalendar ? 'Dölj kalender' : 'Visa kalender'}
+            title={mealPlanner ? 'Dölj kalender' : 'Visa kalender'}
           >
-            {showCalendar ? '▶' : '◀'}
+            {mealPlanner ? '▶' : '◀'}
           </button>
 
+          {/* Add receipe button */}
           <button
             onClick={() => setShowAddModal(!showAddModal)}
             className="bg-green-600 hover:bg-green-700 px-4 py-2 rounded font-bold text-sm"
@@ -164,21 +188,18 @@ function App() {
           onUpdateSlot={handleUpdateSlot}
           apiUrl={API_URL}
           onVote={handleVote}
-          // SKICKA NER STATET OCH SETTERS
           sortField={sortField}
           setSortField={setSortField}
           sortOrder={sortOrder}
           setSortOrder={setSortOrder}
-          // Vi behöver inte längre onRefreshRecipes för sorteringens skull,
-          // men EditRecipe/AddRecipe kan behöva en refresh-funktion.
           onRefreshRecipes={handleRefresh}
           currentWeekStart={currentWeekStart}
           onNextWeek={nextWeek}
           onPrevWeek={prevWeek}
           onGoToday={goToday}
-          peopleNames={peopleNames} // <--- SKICKA NER HÄR
-          showCalendar={showCalendar}
-          setShowCalendar={setShowCalendar}
+          peopleNames={peopleNames}
+          mealPlanner={mealPlanner}
+          setMealPlanner={setMealPlanner}
         />
       </main>
     </div>

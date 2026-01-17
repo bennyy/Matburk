@@ -2,13 +2,13 @@ import { useState, useEffect, useCallback } from 'react';
 import { format, addDays, isSameDay } from 'date-fns';
 // eslint-disable-next-line no-unused-vars
 import { sv } from 'date-fns/locale';
-// eslint-disable-next-line no-unused-vars
+
 import RecipeDetails from '../RecipeDetails';
-// eslint-disable-next-line no-unused-vars
+
 import RecipeListItem from './RecipeListItem';
-// eslint-disable-next-line no-unused-vars
+
 import DayColumn from './DayColumn';
-// eslint-disable-next-line no-unused-vars
+
 import EditRecipe from '../EditRecipe';
 
 /**
@@ -35,8 +35,8 @@ export default function PlannerGrid({
   setSortOrder,
   peopleNames,
   onRefreshRecipes,
-  showCalendar,
-  setShowCalendar,
+  mealPlanner,
+  setMealPlanner,
 }) {
   // ========== CONSTANTS ==========
   const MEALS = ['LUNCH', 'DINNER'];
@@ -60,6 +60,17 @@ export default function PlannerGrid({
   const [editingRecipe, setEditingRecipe] = useState(null);
   const [viewMode, setViewMode] = useState(VIEW_MODES.COMPACT);
 
+  // Per-week lock state - stored with week as key
+  const weekKey = format(currentWeekStart, 'yyyy-MM-dd');
+  const [isWeekLocked, setIsWeekLocked] = useState(() => {
+    if (typeof window !== 'undefined') {
+      // eslint-disable-next-line no-undef
+      const stored = localStorage.getItem(`weekLock_${weekKey}`);
+      return stored === null ? true : stored === 'true';
+    }
+    return false;
+  });
+
   // ========== COMPUTED VALUES ==========
   /** Placeholder recipes (quick add buttons) - sorted by ID for stability */
   const placeholderRecipes = recipes
@@ -78,8 +89,8 @@ export default function PlannerGrid({
   const allTags = Array.from(
     new Set(
       standardRecipes
-        .filter((r) => r.tags)
-        .flatMap((r) => r.tags.split(',').map((t) => t.trim()))
+        .filter((r) => r.tags && Array.isArray(r.tags))
+        .flatMap((r) => r.tags.map((t) => (typeof t === 'string' ? t : t.name)))
     )
   ).sort();
 
@@ -87,7 +98,15 @@ export default function PlannerGrid({
   const filteredRecipes = standardRecipes.filter((recipe) => {
     const query = searchQuery.toLowerCase();
     const nameMatch = recipe.name.toLowerCase().includes(query);
-    const tagMatch = recipe.tags && recipe.tags.toLowerCase().includes(query);
+
+    // Handle tags that are now objects instead of strings
+    const recipeTagNames =
+      recipe.tags && Array.isArray(recipe.tags)
+        ? recipe.tags.map((t) => (typeof t === 'string' ? t : t.name))
+        : [];
+    const tagMatch = recipeTagNames.some((tag) =>
+      tag.toLowerCase().includes(query)
+    );
     const searchPasses = nameMatch || tagMatch;
 
     // If no tags selected, don't filter by tags
@@ -96,17 +115,34 @@ export default function PlannerGrid({
     }
 
     // If tags are selected, recipe must have at least one of the selected tags
-    const recipeTagsArray = recipe.tags
-      ? recipe.tags.split(',').map((t) => t.trim())
-      : [];
     const hasSelectedTag = selectedTags.some((tag) =>
-      recipeTagsArray.includes(tag)
+      recipeTagNames.includes(tag)
     );
 
     return searchPasses && hasSelectedTag;
   });
 
   // ========== EFFECTS ==========
+  /**
+   * Reset batch selection when navigating to a different week
+   */
+  useEffect(() => {
+    setSelectedBatchId(null);
+    setBatches([]);
+  }, [currentWeekStart]);
+
+  /**
+   * Sync lock state when week changes
+   */
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      // eslint-disable-next-line no-undef
+      const stored = localStorage.getItem(`weekLock_${weekKey}`);
+      const locked = stored === null ? true : stored === 'true';
+      setIsWeekLocked(locked);
+    }
+  }, [weekKey]);
+
   /**
    * Reset batch selection when navigating to a different week
    */
@@ -178,7 +214,7 @@ export default function PlannerGrid({
     setRemovedRecipeIds((prev) => {
       return prev.filter((id) => recipeIdsInWeek.includes(id));
     });
-  }, [plan, recipes, currentWeekStart]);
+  }, [plan, recipes, currentWeekStart, removedRecipeIds]);
 
   // ========== HANDLERS ==========
   /**
@@ -263,6 +299,8 @@ export default function PlannerGrid({
    */
   const handleSlotClick = useCallback(
     (date, meal, person) => {
+      if (isWeekLocked) return; // Don't update if week is locked
+
       const dateStr = format(date, 'yyyy-MM-dd');
       const existingSlot = plan.find(
         (p) =>
@@ -290,8 +328,20 @@ export default function PlannerGrid({
         });
       }
     },
-    [selectedBatchId, plan, onUpdateSlot]
+    [selectedBatchId, plan, onUpdateSlot, isWeekLocked]
   );
+
+  /**
+   * Toggle lock for the current week
+   */
+  const handleToggleWeekLock = useCallback(() => {
+    const newLocked = !isWeekLocked;
+    setIsWeekLocked(newLocked);
+    if (typeof window !== 'undefined') {
+      // eslint-disable-next-line no-undef
+      localStorage.setItem(`weekLock_${weekKey}`, newLocked.toString());
+    }
+  }, [isWeekLocked, weekKey]);
 
   /**
    * Count how many times a recipe is allocated in the current plan
@@ -303,10 +353,10 @@ export default function PlannerGrid({
 
   // ========== RENDER ==========
   return (
-    <div className="flex flex-col md:flex-row h-full">
+    <div className="flex flex-col md:flex-row h-full relative">
       {/* ========== SIDEBAR ========== */}
       <div
-        className={`bg-white border-r flex flex-col transition-all ${showCalendar ? 'w-full md:w-1/3 lg:w-1/4 h-[40vh] md:h-full' : 'w-full h-full'}`}
+        className={`bg-white flex flex-col transition-all ${mealPlanner ? 'w-full md:w-1/3 lg:w-1/4 h-[40vh] md:h-full border-b md:border-b-0 md:border-r' : 'w-full h-full border-r'}`}
       >
         {/* Tab Navigation */}
         <div className="flex border-b items-center justify-between md:hidden">
@@ -347,18 +397,33 @@ export default function PlannerGrid({
             </button>
           </div>
           <button
-            onClick={() => setShowCalendar(!showCalendar)}
+            onClick={() => setMealPlanner(!mealPlanner)}
             className="px-3 py-2 hover:bg-gray-100 rounded text-gray-600 font-bold"
-            title={showCalendar ? 'Dölj kalender' : 'Visa kalender'}
-            aria-label={showCalendar ? 'Dölj kalender' : 'Visa kalender'}
+            title={mealPlanner ? 'Dölj kalender' : 'Visa kalender'}
+            aria-label={mealPlanner ? 'Dölj kalender' : 'Visa kalender'}
           >
-            {showCalendar ? '▶' : '◀'}
+            {mealPlanner ? '▶' : '◀'}
           </button>
         </div>
 
         {/* Planning Tab - Meal Batches */}
         {activeTab === TABS.PLANNING && (
-          <div className="flex-1 overflow-y-auto p-4 bg-blue-50">
+          <div className="flex-1 overflow-y-auto p-4 bg-gray-50 flex flex-col">
+            {/* Edit Mode Toggle */}
+            <div className="mb-4">
+              <button
+                onClick={handleToggleWeekLock}
+                className={`w-full py-2 px-3 rounded-lg font-bold text-sm transition-colors border ${
+                  isWeekLocked
+                    ? 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                    : 'bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100'
+                }`}
+                title={isWeekLocked ? 'Redigera veckan' : 'Avsluta redigering'}
+              >
+                {isWeekLocked ? '✏️ Redigera' : '✔️ Klar'}
+              </button>
+            </div>
+
             {batches.length === 0 ? (
               <div className="text-center text-gray-400 mt-10 text-sm">
                 <p>Inga matlådor denna vecka.</p>
@@ -382,7 +447,9 @@ export default function PlannerGrid({
                   return (
                     <div
                       key={batch.recipeId}
-                      onClick={() => setSelectedBatchId(batch.recipeId)}
+                      onClick={() =>
+                        setSelectedBatchId(isSelected ? null : batch.recipeId)
+                      }
                       className={`bg-white p-3 rounded-lg border-2 shadow-sm cursor-pointer relative transition-all ${isSelected ? 'border-blue-500 ring-1 ring-blue-500 shadow-md' : 'border-transparent hover:border-blue-200'}`}
                       role="button"
                       tabIndex={0}
@@ -393,8 +460,16 @@ export default function PlannerGrid({
                           {batch.recipeName}
                         </span>
                         <button
-                          onClick={(e) => removeFromPlanning(e, batch.recipeId)}
-                          className="text-gray-300 hover:text-red-500 font-bold px-2"
+                          onClick={(e) => {
+                            if (isWeekLocked) return;
+                            removeFromPlanning(e, batch.recipeId);
+                          }}
+                          className={`${
+                            isWeekLocked
+                              ? 'text-gray-300 cursor-not-allowed'
+                              : 'text-gray-600 hover:text-red-500'
+                          } font-bold px-2`}
+                          aria-disabled={isWeekLocked}
                           aria-label={`Removera ${batch.recipeName}`}
                         >
                           ×
@@ -410,9 +485,16 @@ export default function PlannerGrid({
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
+                              if (isWeekLocked) return;
                               updateBatchPortions(batch.recipeId, -1);
                             }}
-                            className="w-6 h-6 bg-white border rounded hover:bg-gray-100 flex items-center justify-center"
+                            disabled={isWeekLocked}
+                            aria-disabled={isWeekLocked}
+                            className={`w-6 h-6 border rounded flex items-center justify-center ${
+                              isWeekLocked
+                                ? 'bg-gray-50 border-gray-200 text-gray-400 cursor-not-allowed'
+                                : 'bg-white hover:bg-gray-100'
+                            }`}
                             aria-label="Minska portioner"
                           >
                             −
@@ -423,9 +505,16 @@ export default function PlannerGrid({
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
+                              if (isWeekLocked) return;
                               updateBatchPortions(batch.recipeId, 1);
                             }}
-                            className="w-6 h-6 bg-white border rounded hover:bg-gray-100 flex items-center justify-center"
+                            disabled={isWeekLocked}
+                            aria-disabled={isWeekLocked}
+                            className={`w-6 h-6 border rounded flex items-center justify-center ${
+                              isWeekLocked
+                                ? 'bg-gray-50 border-gray-200 text-gray-400 cursor-not-allowed'
+                                : 'bg-white hover:bg-gray-100'
+                            }`}
                             aria-label="Öka portioner"
                           >
                             +
@@ -490,8 +579,10 @@ export default function PlannerGrid({
                   className="w-full appearance-none p-2.5 pl-3 pr-8 text-xs font-medium border border-gray-300 rounded-lg bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-shadow cursor-pointer"
                   aria-label="Sorteringsfält"
                 >
+                  <option value="total_meals">🥡 Mest använd</option>
                   <option value="vote">❤️ Populärast</option>
                   <option value="last_cooked">📅 Senast lagad</option>
+                  <option value="created">✨ Nyligen tillagd</option>
                   <option value="name">🔤 Namn</option>
                 </select>
                 <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-500">
@@ -666,7 +757,7 @@ export default function PlannerGrid({
       </div>
 
       {/* ========== CALENDAR GRID ========== */}
-      {showCalendar && (
+      {mealPlanner && (
         <div className="flex-1 flex flex-col overflow-hidden bg-slate-100">
           {/* Header - Week Navigation */}
           <div className="bg-white p-3 border-b flex justify-between items-center shadow-sm z-10">
@@ -684,6 +775,11 @@ export default function PlannerGrid({
               <span className="text-lg font-bold text-slate-800">
                 Vecka {format(currentWeekStart, 'w')}
               </span>
+              {!isWeekLocked && (
+                <span className="mt-1 text-blue-600 text-xs" title="Redigerar">
+                  ✏️ Redigerar
+                </span>
+              )}
               <button
                 onClick={onGoToday}
                 className="text-xs text-blue-600 hover:underline font-medium"
@@ -723,6 +819,7 @@ export default function PlannerGrid({
                     recipes={recipes}
                     selectedBatchId={selectedBatchId}
                     onSlotClick={handleSlotClick}
+                    isPlannerLocked={isWeekLocked}
                   />
                 );
               })}

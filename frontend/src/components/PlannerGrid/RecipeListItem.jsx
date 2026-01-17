@@ -92,14 +92,14 @@ export default function RecipeListItem({
           {/* Tags & Info */}
           {isDetailed ? (
             <div className="mt-1">
-              {recipe.tags && (
+              {recipe.tags && Array.isArray(recipe.tags) && (
                 <div className="flex flex-wrap gap-1 mb-1">
-                  {recipe.tags.split(',').map((tag, i) => (
+                  {recipe.tags.map((tag) => (
                     <span
-                      key={i}
+                      key={tag.id}
                       className="text-[10px] bg-blue-50 text-blue-700 px-1.5 py-0.5 rounded border border-blue-100 whitespace-nowrap"
                     >
-                      {tag.trim()}
+                      {typeof tag === 'string' ? tag : tag.name}
                     </span>
                   ))}
                 </div>
@@ -110,19 +110,17 @@ export default function RecipeListItem({
               </div>
             </div>
           ) : (
-            recipe.tags && (
+            recipe.tags &&
+            Array.isArray(recipe.tags) && (
               <div className="flex gap-1 mt-0.5 overflow-hidden">
-                {recipe.tags
-                  .split(',')
-                  .slice(0, 2)
-                  .map((tag, i) => (
-                    <span
-                      key={i}
-                      className="text-[9px] bg-gray-100 text-gray-600 px-1.5 rounded-sm whitespace-nowrap"
-                    >
-                      {tag.trim()}
-                    </span>
-                  ))}
+                {recipe.tags.slice(0, 2).map((tag) => (
+                  <span
+                    key={tag.id}
+                    className="text-[9px] bg-gray-100 text-gray-600 px-1.5 rounded-sm whitespace-nowrap"
+                  >
+                    {typeof tag === 'string' ? tag : tag.name}
+                  </span>
+                ))}
               </div>
             )
           )}
@@ -135,16 +133,21 @@ export default function RecipeListItem({
           isDetailed ? 'h-16' : ''
         }`}
       >
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            onVote();
-          }}
-          className="text-xs bg-gray-50 hover:bg-pink-50 px-2 py-1 rounded text-gray-400 hover:text-pink-500 transition-colors whitespace-nowrap"
-          aria-label={`Rösta för ${recipe.name}`}
-        >
-          ❤️ {recipe.vote_count}
-        </button>
+        <div className="flex gap-1">
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onVote();
+            }}
+            className="text-xs bg-gray-50 hover:bg-pink-50 px-2 py-1 rounded text-gray-400 hover:text-pink-500 transition-colors whitespace-nowrap"
+            aria-label={`Rösta för ${recipe.name}`}
+          >
+            ❤️ {recipe.vote_count}
+          </button>
+          <div className="text-xs bg-blue-50 px-2 py-1 rounded text-blue-600 whitespace-nowrap">
+            🥡 {recipe.meal_count || 0}
+          </div>
+        </div>
         <button
           onClick={(e) => {
             e.stopPropagation();

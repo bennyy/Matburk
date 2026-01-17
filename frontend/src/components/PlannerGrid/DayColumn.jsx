@@ -1,6 +1,6 @@
 import { format } from 'date-fns';
 import { sv } from 'date-fns/locale';
-// eslint-disable-next-line no-unused-vars
+
 import MealRow from './MealRow';
 
 /**
@@ -16,6 +16,7 @@ export default function DayColumn({
   recipes,
   selectedBatchId,
   onSlotClick,
+  isPlannerLocked,
 }) {
   return (
     <div
@@ -46,6 +47,7 @@ export default function DayColumn({
             recipes={recipes}
             selectedBatchId={selectedBatchId}
             onSlotClick={onSlotClick}
+            isPlannerLocked={isPlannerLocked}
           />
         ))}
       </div>

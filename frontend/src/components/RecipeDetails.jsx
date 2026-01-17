@@ -1,5 +1,3 @@
-import React from 'react';
-
 const RecipeDetails = ({ recipe, onClose, onEdit, apiUrl }) => {
   if (!recipe) return null;
 
@@ -67,18 +65,19 @@ const RecipeDetails = ({ recipe, onClose, onEdit, apiUrl }) => {
             <span className="bg-pink-100 text-pink-800 px-3 py-1 rounded-full text-sm font-bold">
               ❤️ {recipe.vote_count} röster
             </span>
+            <span className="bg-cyan-100 text-cyan-800 px-3 py-1 rounded-full text-sm font-bold">
+              🥡 {recipe.meal_count || 0} gånger använd
+            </span>
             {recipe.tags &&
-              recipe.tags.split(',').map(
-                (tag, i) =>
-                  tag.trim() && (
-                    <span
-                      key={i}
-                      className="bg-gray-100 text-gray-600 px-3 py-1 rounded-full text-sm border"
-                    >
-                      {tag.trim()}
-                    </span>
-                  )
-              )}
+              Array.isArray(recipe.tags) &&
+              recipe.tags.map((tag) => (
+                <span
+                  key={tag.id}
+                  className="bg-gray-100 text-gray-600 px-3 py-1 rounded-full text-sm border"
+                >
+                  {tag.name}
+                </span>
+              ))}
           </div>
 
           <hr className="border-gray-100" />

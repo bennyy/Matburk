@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState } from 'react';
 
 const TagInput = ({ value, onChange, placeholder }) => {
   // Vi håller en intern input-state för det man skriver just nu
