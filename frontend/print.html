@@ -1,0 +1,314 @@
+<!doctype html>
+<html lang="sv">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Matplan - Skriv ut</title>
+    <style>
+        /* Print styles inspired by PlannerGrid cards */
+        html,
+        body {
+            margin: 0;
+            padding: 0;
+            font-family:
+                Inter,
+                system-ui,
+                -apple-system,
+                'Segoe UI',
+                Roboto,
+                'Helvetica Neue',
+                Arial;
+            color: #111827;
+        }
+
+        .page {
+            padding: 8mm;
+            box-sizing: border-box;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 6mm;
+        }
+
+        h1 {
+            font-size: 18px;
+            margin: 0;
+        }
+
+        .small {
+            font-size: 11px;
+            color: #6b7280;
+        }
+
+        /* Day container (card-like) */
+        /* Use two columns for print to reduce vertical length and fit one A4 page */
+        .days {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 6mm;
+        }
+
+        .day {
+            border: 1px solid #e6eef6;
+            background: #ffffff;
+            border-radius: 6px;
+            padding: 4px;
+            margin: 0;
+            box-sizing: border-box;
+        }
+
+        .day h2 {
+            margin: 0 0 4px 0;
+            font-size: 12px;
+        }
+
+        /* Meal rows with two person columns (A/B) */
+        .meal-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 4px;
+            margin-bottom: 4px;
+        }
+
+        .person-card {
+            background: #f8fafc;
+            border: 1px solid #e5e7eb;
+            border-radius: 6px;
+            padding: 4px;
+            min-height: 30px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .person-meta {
+            font-size: 10px;
+            color: #6b7280;
+            margin-bottom: 3px;
+        }
+
+        .person-name {
+            font-weight: 700;
+            font-size: 12px;
+            color: #111827;
+        }
+
+        .slot-empty {
+            color: #9ca3af;
+            font-style: italic;
+            font-size: 11px;
+        }
+
+        @media print {
+            button {
+                display: none;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="page">
+        <header>
+            <div>
+                <h1 id="pageTitle">Veckoplan</h1>
+                <div id="weekRange" class="small"></div>
+            </div>
+            <div>
+                <button id="printBtn">Skriv ut</button>
+            </div>
+        </header>
+
+        <div id="content" class="days">Laddar…</div>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:8000';
+
+        function qs(name) {
+            const params = new URLSearchParams(location.search);
+            return params.get(name);
+        }
+
+        function formatDate(d) {
+            return d.toLocaleDateString('sv-SE', {
+                weekday: 'short',
+                day: 'numeric',
+                month: 'numeric',
+            });
+        }
+
+        function isoDate(d) {
+            return d.toISOString().slice(0, 10);
+        }
+
+        function startOfWeek(date) {
+            const d = new Date(date);
+            const day = d.getDay();
+            const diff = (day + 6) % 7; // make Monday=0
+            d.setDate(d.getDate() - diff);
+            d.setHours(0, 0, 0, 0);
+            return d;
+        }
+
+        async function fetchSettings() {
+            try {
+                const res = await fetch(`${API_URL}/settings`);
+                if (!res.ok) return { name_A: 'A', name_B: 'B' };
+                return await res.json();
+            } catch (e) {
+                return { name_A: 'A', name_B: 'B' };
+            }
+        }
+
+        async function scaleToFit() {
+            const page = document.querySelector('.page');
+            if (!page) return;
+            // allow layout to settle
+            await new Promise((r) => setTimeout(r, 50));
+            const contentHeight = page.scrollHeight;
+            const avail = window.innerHeight - 20;
+            const scale = Math.min(1, avail / contentHeight);
+            page.style.transform = `scale(${scale})`;
+            page.style.transformOrigin = 'top left';
+            page.style.width = `${100 / scale}%`;
+        }
+
+        (async function () {
+            const weekStartParam = qs('weekStart');
+            const base = weekStartParam ? new Date(weekStartParam) : new Date();
+            const start = startOfWeek(base);
+            const end = new Date(start);
+            end.setDate(end.getDate() + 6);
+
+            document.getElementById('weekRange').textContent =
+                formatDate(start) + ' — ' + formatDate(end);
+
+            function getISOWeekNumber(d) {
+                const date = new Date(
+                    Date.UTC(d.getFullYear(), d.getMonth(), d.getDate())
+                );
+                // Set to nearest Thursday: current date + 4 - current day number
+                const dayNum = date.getUTCDay() || 7;
+                date.setUTCDate(date.getUTCDate() + 4 - dayNum);
+                const yearStart = new Date(Date.UTC(date.getUTCFullYear(), 0, 1));
+                const weekNo = Math.ceil(((date - yearStart) / 86400000 + 1) / 7);
+                return weekNo;
+            }
+
+            const isoWeek = getISOWeekNumber(start);
+            const titleEl = document.getElementById('pageTitle');
+            if (titleEl) titleEl.textContent = `Veckoplan — Vecka ${isoWeek}`;
+
+            try {
+                const startStr = isoDate(start);
+                const endStr = isoDate(end);
+                const [recipesRes, planRes, settingsRes] = await Promise.all([
+                    fetch(`${API_URL}/recipes`).then((r) => r.json()),
+                    fetch(
+                        `${API_URL}/plan?start_date=${startStr}&end_date=${endStr}`
+                    ).then((r) => r.json()),
+                    fetch(`${API_URL}/settings`)
+                        .then((r) => r.json())
+                        .catch(() => ({ name_A: 'A', name_B: 'B' })),
+                ]);
+
+                const nameMap = {
+                    A: settingsRes.name_A || 'A',
+                    B: settingsRes.name_B || 'B',
+                };
+
+                const recipesById = Object.fromEntries(
+                    recipesRes.map((r) => [r.id, r])
+                );
+
+                const content = document.getElementById('content');
+                content.innerHTML = '';
+
+                for (let i = 0; i < 7; i++) {
+                    const day = new Date(start);
+                    day.setDate(start.getDate() + i);
+                    const dayStr = isoDate(day);
+
+                    const daySlots = planRes.filter((s) => s.plan_date === dayStr);
+
+                    const dayDiv = document.createElement('div');
+                    dayDiv.className = 'day';
+
+                    const h = document.createElement('h2');
+                    h.textContent = formatDate(day) + ' (' + dayStr + ')';
+                    dayDiv.appendChild(h);
+
+                    // Build meal rows (LUNCH, DINNER) with person boxes A/B to mirror PlannerGrid
+                    const MEALS = ['LUNCH', 'DINNER'];
+                    MEALS.forEach((mealType) => {
+                        const mealRow = document.createElement('div');
+                        mealRow.className = 'meal-row';
+
+                        ['A', 'B'].forEach((personKey) => {
+                            const slot = daySlots.find(
+                                (s) => s.meal_type === mealType && s.person === personKey
+                            );
+                            const card = document.createElement('div');
+                            card.className = 'person-card';
+
+                            const meta = document.createElement('div');
+                            meta.className = 'person-meta';
+                            meta.textContent = `${mealType} • ${nameMap[personKey] || personKey}`;
+
+                            const nameEl = document.createElement('div');
+                            const r = slot ? recipesById[slot.recipe_id] : null;
+                            if (r) {
+                                nameEl.className = 'person-name';
+                                nameEl.textContent = r.name;
+                            } else {
+                                nameEl.className = 'slot-empty';
+                                nameEl.textContent = '—';
+                            }
+
+                            card.appendChild(meta);
+                            card.appendChild(nameEl);
+                            mealRow.appendChild(card);
+                        });
+
+                        dayDiv.appendChild(mealRow);
+                    });
+
+                    content.appendChild(dayDiv);
+                }
+
+                // scale to fit one page in print preview
+                await scaleToFit();
+
+                // Re-scale on resize
+                window.addEventListener('resize', () => {
+                    scaleToFit();
+                });
+
+                // Ensure scaling runs before print
+                window.onbeforeprint = () => scaleToFit();
+                window.onafterprint = () => {
+                    const page = document.querySelector('.page');
+                    if (page) {
+                        page.style.transform = '';
+                        page.style.width = '';
+                    }
+                };
+            } catch (e) {
+                document.getElementById('content').textContent =
+                    'Fel vid hämtning av data.';
+                console.error(e);
+            }
+        })();
+
+        document.getElementById('printBtn').addEventListener('click', () => {
+            window.print();
+        });
+    </script>
+</body>
+
+</html>

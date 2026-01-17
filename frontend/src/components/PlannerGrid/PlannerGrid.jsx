@@ -790,6 +790,18 @@ export default function PlannerGrid({
             </div>
             <div className="flex gap-2 items-center">
               <button
+                onClick={() => {
+                  const startStr = format(currentWeekStart, 'yyyy-MM-dd');
+                  const url = `/print.html?weekStart=${startStr}`;
+                  window.open(url, '_blank');
+                }}
+                className="px-3 py-2 hover:bg-gray-100 rounded text-gray-600 font-bold no-print"
+                title="Öppna utskriftssida"
+                aria-label="Öppna utskriftssida"
+              >
+                🖨️ Skriv ut
+              </button>
+              <button
                 onClick={onNextWeek}
                 className="p-2 hover:bg-gray-100 rounded text-gray-600 font-bold flex items-center gap-1"
                 aria-label="Nästa vecka"
