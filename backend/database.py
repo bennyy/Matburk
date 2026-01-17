@@ -1,19 +1,39 @@
-"""Database configuration and session management."""
+"""Database configuration and session management.
+
+Supports optional Postgres via the `DATABASE_URL` environment variable.
+If `DATABASE_URL` is not set the module falls back to a local SQLite file.
+"""
+
+import os
 
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
-# SQLite database configuration
-SQLALCHEMY_DATABASE_URL = "sqlite:///./matplanerare.db"
+# Read DATABASE_URL from environment; fallback to local SQLite file
+DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./matplanerare.db")
 
-# Create engine with SQLite-specific options
-engine = create_engine(
-    SQLALCHEMY_DATABASE_URL,
-    connect_args={
-        "check_same_thread": False
-    },  # SQLite requires this for multi-threading
-)
+# Fetch variables
+USER = os.getenv("user", "sqlite")
+PASSWORD = os.getenv("password")
+HOST = os.getenv("host")
+PORT = os.getenv("port")
+DBNAME = os.getenv("dbname")
+
+# Construct the SQLAlchemy connection string
+
+
+# Create engine with backend-specific options
+if USER.startswith("sqlite"):
+    engine = create_engine(
+        DATABASE_URL,
+        connect_args={"check_same_thread": False},
+    )
+else:
+    DATABASE_URL = f"postgresql+psycopg2://{USER}:{PASSWORD}@{HOST}:{PORT}/{DBNAME}?sslmode=require"
+    # For PostgreSQL (and other DSNs) rely on the provided URL and enable
+    # pool_pre_ping to avoid stale connection errors in long-running servers.
+    engine = create_engine(DATABASE_URL, pool_pre_ping=True)
 
 # Create session factory
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
@@ -23,16 +43,8 @@ Base = declarative_base()
 
 
 def get_db():
-    """Dependency for FastAPI routes to get database session.
+    """FastAPI dependency that yields a DB session and closes it afterwards."""
 
-    Yields:
-        Database session
-
-    Example:
-        @app.get("/items")
-        def get_items(db: Session = Depends(get_db)):
-            return db.query(Item).all()
-    """
     db = SessionLocal()
     try:
         yield db
