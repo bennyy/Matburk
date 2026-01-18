@@ -21,6 +21,7 @@ services:
     restart: unless-stopped
     networks:
       - matburk_network
+      - coolify
     expose:
       - "8000"
 
@@ -37,6 +38,7 @@ services:
     restart: unless-stopped
     networks:
       - matburk_network
+      - coolify
     # ports:
     #   - "3000:3000"
     expose:
@@ -45,3 +47,5 @@ services:
 networks:
   matburk_network:
     driver: bridge
+  coolify:
+    external: true
