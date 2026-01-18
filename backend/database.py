@@ -11,26 +11,15 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
 # Read DATABASE_URL from environment; fallback to local SQLite file
-DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./matplanerare.db")
-
-# Fetch variables
-USER = os.getenv("user", "sqlite")
-PASSWORD = os.getenv("password")
-HOST = os.getenv("host")
-PORT = os.getenv("port")
-DBNAME = os.getenv("dbname")
-
-# Construct the SQLAlchemy connection string
-
+DATABASE_URL = os.getenv("DATABASE_URL") or "sqlite:///./matplanerare.db"
 
 # Create engine with backend-specific options
-if USER.startswith("sqlite"):
+if DATABASE_URL.startswith("sqlite"):
     engine = create_engine(
         DATABASE_URL,
         connect_args={"check_same_thread": False},
     )
 else:
-    DATABASE_URL = f"postgresql+psycopg2://{USER}:{PASSWORD}@{HOST}:{PORT}/{DBNAME}?sslmode=require"
     # For PostgreSQL (and other DSNs) rely on the provided URL and enable
     # pool_pre_ping to avoid stale connection errors in long-running servers.
     engine = create_engine(DATABASE_URL, pool_pre_ping=True)

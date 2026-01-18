@@ -26,7 +26,6 @@ export default function EditRecipe({ recipe, apiUrl, onUpdated, onCancel }) {
   );
   const [notes, setNotes] = useState(recipe.notes || '');
   const [link, setLink] = useState(recipe.link || '');
-  const [file, setFile] = useState(null);
   const [imageUrl, setImageUrl] = useState(recipe?.image_url || '');
   const [isLoading, setIsLoading] = useState(false);
 
@@ -38,14 +37,12 @@ export default function EditRecipe({ recipe, apiUrl, onUpdated, onCancel }) {
     async (e) => {
       e.preventDefault();
       setIsLoading(true);
-
       const formData = new FormData();
       formData.append('name', name);
       formData.append('portions', portions);
       formData.append('tags', tags);
       formData.append('notes', notes);
       if (link) formData.append('link', link);
-      if (file) formData.append('file', file);
       if (imageUrl) formData.append('image_url', imageUrl);
 
       try {
@@ -65,7 +62,6 @@ export default function EditRecipe({ recipe, apiUrl, onUpdated, onCancel }) {
       tags,
       notes,
       link,
-      file,
       imageUrl,
       recipe.id,
       apiUrl,
@@ -181,24 +177,10 @@ export default function EditRecipe({ recipe, apiUrl, onUpdated, onCancel }) {
             />
           </div>
 
-          {/* Image Upload */}
-          <div>
-            <label className="block text-sm font-bold text-gray-700 mb-1">
-              Byt bild (lämna tom för att behålla)
-            </label>
-            <input
-              type="file"
-              accept="image/*"
-              className="block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
-              onChange={(e) => setFile(e.target.files[0])}
-              aria-label="Ladda upp ny receptbild"
-            />
-          </div>
-
           {/* Image URL */}
           <div>
             <label className="block text-sm font-bold text-gray-700 mb-1">
-              Eller klistra in bildlänk
+              Bildlänk (lämna tom för att behålla)
             </label>
             <input
               type="url"

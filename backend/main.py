@@ -1,9 +1,7 @@
 import os
-import shutil
 from datetime import datetime, date
 from typing import List, Dict
-from fastapi import FastAPI, Depends, UploadFile, File, Form, HTTPException
-from fastapi.staticfiles import StaticFiles
+from fastapi import FastAPI, Depends, Form, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from sqlalchemy import func
@@ -13,7 +11,6 @@ import schemas
 from database import SessionLocal, engine, get_db
 
 # Configuration constants
-UPLOAD_DIR = "uploads"
 DEFAULT_PORTIONS = 4
 DEFAULT_PERSON_A = "Person A"
 DEFAULT_PERSON_B = "Person B"
@@ -23,9 +20,6 @@ models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="Matplanerare API", description="Recipe planner API")
 
-# Ensure upload directory exists
-os.makedirs(UPLOAD_DIR, exist_ok=True)
-
 # CORS middleware configuration
 app.add_middleware(
     CORSMiddleware,
@@ -33,9 +27,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-# Static files for uploaded images
-app.mount("/images", StaticFiles(directory=UPLOAD_DIR), name="images")
 
 # Placeholder recipes configuration
 PLACEHOLDER_RECIPES = [
@@ -242,7 +233,6 @@ async def create_recipe(
     notes: str = Form(None),
     image_url: str = Form(None),
     is_test: bool = Form(False),
-    file: UploadFile = File(None),
     db: Session = Depends(get_db),
 ) -> schemas.Recipe:
     """Create a new recipe.
@@ -255,20 +245,11 @@ async def create_recipe(
         notes: Optional notes
         image_url: Optional image URL
         is_test: Whether this is a test recipe
-        file: Optional image file upload
         db: Database session
 
     Returns:
         Created recipe
     """
-    filename = None
-    if file:
-        timestamp = int(datetime.now().timestamp())
-        filename = f"{timestamp}_{file.filename}"
-        file_location = f"{UPLOAD_DIR}/{filename}"
-        with open(file_location, "wb+") as file_object:
-            shutil.copyfileobj(file.file, file_object)
-
     # Parse and create tags
     tag_objects = []
     if tags:
@@ -293,7 +274,7 @@ async def create_recipe(
         notes=notes,
         image_url=image_url,
         is_test_recipe=is_test,
-        image_filename=filename,
+        image_filename=None,
         tags=tag_objects,
     )
 
@@ -313,7 +294,6 @@ async def update_recipe(
     notes: str = Form(None),
     image_url: str = Form(None),
     is_test: bool = Form(False),
-    file: UploadFile = File(None),
     db: Session = Depends(get_db),
 ) -> schemas.Recipe:
     """Update an existing recipe.
@@ -327,7 +307,6 @@ async def update_recipe(
         notes: Optional notes
         image_url: Optional image URL
         is_test: Whether this is a test recipe
-        file: Optional new image file
         db: Database session
 
     Returns:
@@ -341,15 +320,6 @@ async def update_recipe(
     )
     if not db_recipe:
         raise HTTPException(status_code=404, detail="Recipe not found")
-
-    # Handle image upload
-    if file:
-        timestamp = int(datetime.now().timestamp())
-        filename = f"{timestamp}_{file.filename}"
-        file_location = f"{UPLOAD_DIR}/{filename}"
-        with open(file_location, "wb+") as file_object:
-            shutil.copyfileobj(file.file, file_object)
-        db_recipe.image_filename = filename
 
     # Update recipe fields
     db_recipe.name = name

@@ -15,9 +15,9 @@ import SettingsModal from './components/SettingsModal';
  * - Maintain app-level state (recipes, plan, UI modals)
  * - Provide handlers to child components for updating the plan
  *
- * Note: If running in WSL/containers, adjust `API_URL` accordingly.
+ * Note: API_URL uses /api path which is routed by nginx reverse proxy.
  */
-const API_URL = 'http://localhost:8000';
+const API_URL = import.meta.env.VITE_API_URL || '/api';
 
 function App() {
   const [recipes, setRecipes] = useState([]);

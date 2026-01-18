@@ -12,12 +12,7 @@ const RecipeDetails = ({ recipe, onClose, onEdit, apiUrl }) => {
       >
         {/* BILD HEADER */}
         <div className="relative h-64 bg-gray-200 w-full shrink-0">
-          {recipe.image_filename ? (
-            <img
-              src={`${apiUrl}/images/${recipe.image_filename}`}
-              className="w-full h-full object-cover"
-            />
-          ) : recipe.image_url ? (
+          {recipe.image_url ? (
             <img
               src={recipe.image_url}
               className="w-full h-full object-cover"

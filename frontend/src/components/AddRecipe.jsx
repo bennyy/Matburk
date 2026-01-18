@@ -19,7 +19,6 @@ export default function AddRecipe({ onAdded, apiUrl }) {
   const [tags, setTags] = useState('');
   const [notes, setNotes] = useState('');
   const [link, setLink] = useState('');
-  const [file, setFile] = useState(null);
   const [imageUrl, setImageUrl] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
@@ -33,7 +32,6 @@ export default function AddRecipe({ onAdded, apiUrl }) {
     setTags('');
     setNotes('');
     setLink('');
-    setFile(null);
     setImageUrl('');
   }, []);
 
@@ -44,14 +42,12 @@ export default function AddRecipe({ onAdded, apiUrl }) {
     async (e) => {
       e.preventDefault();
       setIsLoading(true);
-
       const formData = new FormData();
       formData.append('name', name);
       formData.append('portions', portions);
       formData.append('tags', tags);
       formData.append('notes', notes);
       if (link) formData.append('link', link);
-      if (file) formData.append('file', file);
       if (imageUrl) formData.append('image_url', imageUrl);
 
       try {
@@ -74,7 +70,6 @@ export default function AddRecipe({ onAdded, apiUrl }) {
       tags,
       notes,
       link,
-      file,
       imageUrl,
       apiUrl,
       onAdded,
@@ -160,24 +155,10 @@ export default function AddRecipe({ onAdded, apiUrl }) {
         />
       </div>
 
-      {/* Image Upload */}
-      <div>
-        <label className="block text-sm font-bold text-gray-700 mb-1">
-          Bild
-        </label>
-        <input
-          type="file"
-          accept="image/*"
-          className="block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
-          onChange={(e) => setFile(e.target.files[0])}
-          aria-label="Ladda upp receptbild"
-        />
-      </div>
-
       {/* Image URL */}
       <div>
         <label className="block text-sm font-bold text-gray-700 mb-1">
-          Eller klistra in bildlänk
+          Bildlänk (valfritt)
         </label>
         <input
           type="url"

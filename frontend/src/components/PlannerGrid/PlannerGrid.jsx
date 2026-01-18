@@ -189,7 +189,7 @@ export default function PlannerGrid({
           newBatches.push({
             recipeId: recipe.id,
             recipeName: recipe.name,
-            image: recipe.image_filename,
+            image: recipe.image_url,
             targetPortions: existing
               ? existing.targetPortions
               : Math.max(recipe.default_portions, currentUsage),
@@ -234,7 +234,7 @@ export default function PlannerGrid({
               recipeId: recipe.id,
               targetPortions: recipe.default_portions,
               recipeName: recipe.name,
-              image: recipe.image_filename,
+              image: recipe.image_url,
               imageUrl: recipe.image_url,
             },
           ];

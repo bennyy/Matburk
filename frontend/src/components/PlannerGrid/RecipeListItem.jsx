@@ -5,7 +5,6 @@
 export default function RecipeListItem({
   recipe,
   viewMode,
-  apiUrl,
   onView,
   onVote,
   onAddToPlan,
@@ -14,9 +13,6 @@ export default function RecipeListItem({
   const isMinimal = viewMode === 'minimal';
 
   const getRecipeImage = () => {
-    if (recipe.image_filename) {
-      return `${apiUrl}/images/${recipe.image_filename}`;
-    }
     if (recipe.image_url) {
       return recipe.image_url;
     }
