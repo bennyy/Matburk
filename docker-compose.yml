@@ -10,19 +10,19 @@ services:
     environment:
       DATABASE_URL: ${DATABASE_URL:-sqlite:////app/data/matplanerare.db}
       BACKEND_HOST: ${BACKEND_HOST:-0.0.0.0}
-      BACKEND_PORT: ${BACKEND_PORT:-8000}
+      BACKEND_PORT: ${BACKEND_PORT:-8005}
       ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-http://localhost}
       WORKERS: ${BACKEND_WORKERS:-1}
     volumes:
       - ./backend/uploads:/app/uploads
       - ./backend/data:/app/data
     ports:
-      - "${BACKEND_PORT:-8000}:8000"
+      - "${BACKEND_PORT:-8005}:8005"
     restart: unless-stopped
     networks:
       - matburk_network
     expose:
-      - "8000"
+      - "8005"
 
   # Frontend
   frontend:
