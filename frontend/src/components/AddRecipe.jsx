@@ -64,17 +64,7 @@ export default function AddRecipe({ onAdded, apiUrl }) {
         setIsLoading(false);
       }
     },
-    [
-      name,
-      portions,
-      tags,
-      notes,
-      link,
-      imageUrl,
-      apiUrl,
-      onAdded,
-      resetForm,
-    ]
+    [name, portions, tags, notes, link, imageUrl, apiUrl, onAdded, resetForm]
   );
 
   // ========== RENDER ==========

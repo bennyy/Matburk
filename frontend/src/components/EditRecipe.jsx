@@ -56,17 +56,7 @@ export default function EditRecipe({ recipe, apiUrl, onUpdated, onCancel }) {
         setIsLoading(false);
       }
     },
-    [
-      name,
-      portions,
-      tags,
-      notes,
-      link,
-      imageUrl,
-      recipe.id,
-      apiUrl,
-      onUpdated,
-    ]
+    [name, portions, tags, notes, link, imageUrl, recipe.id, apiUrl, onUpdated]
   );
 
   /**

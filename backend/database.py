@@ -11,7 +11,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
 # Read DATABASE_URL from environment; fallback to local SQLite file
-DATABASE_URL = os.getenv("DATABASE_URL") or "sqlite:///./matplanerare.db"
+DATABASE_URL = os.getenv("DATABASE_URL") or "sqlite:///./data/matplanerare.db"
 
 # Create engine with backend-specific options
 if DATABASE_URL.startswith("sqlite"):
