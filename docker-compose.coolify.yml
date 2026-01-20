@@ -19,7 +19,7 @@ services:
     networks:
       - matburk_network
     healthcheck:
-      test: ["CMD", "sh", "-c", "curl -f http://localhost:8000/"]
+      test: ["CMD", "sh", "-c", "curl -f http://localhost:8000/settings"]
       interval: 30s
       timeout: 10s
       retries: 3
