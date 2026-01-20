@@ -1,0 +1,58 @@
+version: "3.8"
+
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    container_name: matburk_backend
+    environment:
+      MATBURK_DATABASE_URL: ${MATBURK_DATABASE_URL:-sqlite:////app/data/matplanerare.db}
+      MATBURK_DATABASE_TYPE: ${MATBURK_DATABASE_TYPE:-sqlite}
+      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-https://yourdomain.com}
+    volumes:
+      - ./backend/uploads:/app/uploads
+      - ./backend/data:/app/data
+    expose:
+      - "8000"
+    restart: unless-stopped
+    networks:
+      - matburk_network
+    healthcheck:
+      test: ["CMD", "sh", "-c", "curl -f http://localhost:8000/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+      args:
+        VITE_API_URL: http://backend:8000
+    container_name: matburk_frontend
+    depends_on:
+      - backend
+    expose:
+      - "3000"
+    restart: unless-stopped
+    networks:
+      - matburk_network
+      - coolify
+    labels:
+      - "coolify.managed=true"
+      - "coolify.proxy=true"
+      - "coolify.port=3000"
+    healthcheck:
+      test: ["CMD", "sh", "-c", "wget --no-verbose --tries=1 --spider http://localhost:3000"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+
+networks:
+  matburk_network:
+    driver: bridge
+  coolify:
+    external: true

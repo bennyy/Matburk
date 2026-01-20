@@ -8,22 +8,17 @@ services:
       dockerfile: Dockerfile.backend
     container_name: ${COMPOSE_PROJECT_NAME:-matburk}_backend
     environment:
-      DATABASE_URL: ${DATABASE_URL:-sqlite:////app/data/matplanerare.db}
-      BACKEND_HOST: ${BACKEND_HOST:-0.0.0.0}
-      BACKEND_PORT: ${BACKEND_PORT:-8000}
-      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-http://localhost}
-      WORKERS: ${BACKEND_WORKERS:-1}
+      MATBURK_DATABASE_URL: ${MATBURK_DATABASE_URL:-sqlite:////app/data/matplanerare.db}
+      MATBURK_DATABASE_TYPE: ${MATBURK_DATABASE_TYPE:-sqlite}
+      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-http://localhost:3000}
     volumes:
       - ./backend/uploads:/app/uploads
       - ./backend/data:/app/data
-    # ports:
-    #   - "${BACKEND_PORT:-8000}:8000"
+    ports:
+      - "8000:8000"
     restart: unless-stopped
     networks:
       - matburk_network
-      - coolify
-    expose:
-      - "8000"
 
   # Frontend
   frontend:
@@ -31,21 +26,16 @@ services:
       context: .
       dockerfile: Dockerfile.frontend
       args:
-        VITE_API_URL: ${API_URL:-/api}
+        VITE_API_URL: ${API_URL:-http://localhost:8000}
     container_name: ${COMPOSE_PROJECT_NAME:-matburk}_frontend
     depends_on:
       - backend
     restart: unless-stopped
     networks:
       - matburk_network
-      - coolify
-    # ports:
-    #   - "3000:3000"
-    expose:
-      - "3000"
+    ports:
+      - "3000:3000"
 
 networks:
   matburk_network:
     driver: bridge
-  coolify:
-    external: true

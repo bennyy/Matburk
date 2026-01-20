@@ -10,11 +10,14 @@ from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
-# Read DATABASE_URL from environment; fallback to local SQLite file
-DATABASE_URL = os.getenv("DATABASE_URL") or "sqlite:///./data/matplanerare.db"
+# Database type setting (sqlite or postgresql)
+DB_TYPE = os.getenv("MATBURK_DATABASE_TYPE", "sqlite")
+
+# Database URL setting
+DATABASE_URL = os.getenv("MATBURK_DATABASE_URL", "sqlite:///./data/matplanerare.db")
 
 # Create engine with backend-specific options
-if DATABASE_URL.startswith("sqlite"):
+if DB_TYPE == "sqlite":
     engine = create_engine(
         DATABASE_URL,
         connect_args={"check_same_thread": False},

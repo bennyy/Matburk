@@ -15,6 +15,9 @@ DEFAULT_PORTIONS = 4
 DEFAULT_PERSON_A = "Person A"
 DEFAULT_PERSON_B = "Person B"
 
+# CORS configuration from environment
+ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS", "*").split(",")
+
 # Create database tables
 models.Base.metadata.create_all(bind=engine)
 
@@ -23,7 +26,7 @@ app = FastAPI(title="Matplanerare API", description="Recipe planner API")
 # CORS middleware configuration
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Configure with environment variable in production
+    allow_origins=ALLOWED_ORIGINS,
     allow_methods=["*"],
     allow_headers=["*"],
 )
