@@ -38,10 +38,7 @@ services:
       - "3000"
     restart: unless-stopped
     networks:
-      matburk_network:
-        aliases:
-          - backend-access
-      coolify: # Traefik network
+      - matburk_network
     labels:
       - "coolify.managed=true"
       - "coolify.proxy=true"
