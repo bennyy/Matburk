@@ -22,11 +22,30 @@ class Person(str, Enum):
     B = "B"
 
 
+class Permission(str, Enum):
+    """Enum for access permissions."""
+
+    OWNER = "owner"
+    EDIT = "edit"
+    VIEW = "view"
+
+
 class Tag(BaseModel):
     """Tag schema."""
 
     id: int
     name: str
+
+    class Config:
+        from_attributes = True
+
+
+class User(BaseModel):
+    """User schema."""
+
+    id: int
+    email: str
+    created_at: datetime
 
     class Config:
         from_attributes = True
@@ -97,8 +116,52 @@ class PlanSlotUpdate(BaseModel):
     recipe_id: Optional[int] = None
 
 
-class SettingsUpdate(BaseModel):
-    """Schema for updating application settings."""
+class MealPlan(BaseModel):
+    """Meal plan schema."""
+
+    id: int
+    name: str
+    created_by_user: User
+    created_at: datetime
+    updated_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class MealPlanWithAccess(MealPlan):
+    """Meal plan with user's permission level."""
+
+    permission: Permission
+
+
+class MealPlanShare(BaseModel):
+    """Shareable code schema."""
+
+    id: int
+    share_code: str
+    permission: Permission
+    is_one_time: bool
+    consumed_at: Optional[datetime] = None
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class MealPlanSettings(BaseModel):
+    """Schema for meal plan settings."""
 
     name_A: str
     name_B: str
+
+
+class UserInPlan(BaseModel):
+    """Schema representing a user who has access to a meal plan."""
+
+    id: int
+    email: str
+    permission: Permission
+
+    class Config:
+        from_attributes = True

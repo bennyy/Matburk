@@ -12,7 +12,13 @@ import TagInput from './TagInput';
  * - Soft delete recipe
  * - Confirmation dialogs for destructive actions
  */
-export default function EditRecipe({ recipe, apiUrl, onUpdated, onCancel }) {
+export default function EditRecipe({
+  recipe,
+  apiUrl,
+  planId,
+  onUpdated,
+  onCancel,
+}) {
   // ========== STATE MANAGEMENT ==========
   const [name, setName] = useState(recipe.name);
   const [portions, setPortions] = useState(recipe.default_portions);
@@ -46,9 +52,13 @@ export default function EditRecipe({ recipe, apiUrl, onUpdated, onCancel }) {
       if (imageUrl) formData.append('image_url', imageUrl);
 
       try {
-        await axios.put(`${apiUrl}/recipes/${recipe.id}`, formData, {
-          headers: { 'Content-Type': 'multipart/form-data' },
-        });
+        await axios.put(
+          `${apiUrl}/plans/${planId}/recipes/${recipe.id}`,
+          formData,
+          {
+            headers: { 'Content-Type': 'multipart/form-data' },
+          }
+        );
         onUpdated();
       } catch (error) {
         console.error('Error updating recipe:', error);
@@ -56,7 +66,18 @@ export default function EditRecipe({ recipe, apiUrl, onUpdated, onCancel }) {
         setIsLoading(false);
       }
     },
-    [name, portions, tags, notes, link, imageUrl, recipe.id, apiUrl, onUpdated]
+    [
+      name,
+      portions,
+      tags,
+      notes,
+      link,
+      imageUrl,
+      recipe.id,
+      apiUrl,
+      planId,
+      onUpdated,
+    ]
   );
 
   /**
@@ -73,14 +94,14 @@ export default function EditRecipe({ recipe, apiUrl, onUpdated, onCancel }) {
 
     try {
       setIsLoading(true);
-      await axios.delete(`${apiUrl}/recipes/${recipe.id}`);
+      await axios.delete(`${apiUrl}/plans/${planId}/recipes/${recipe.id}`);
       onUpdated();
     } catch (error) {
       console.error('Error deleting recipe:', error);
       alert('Fel vid borttagning');
       setIsLoading(false);
     }
-  }, [recipe.id, apiUrl, onUpdated]);
+  }, [recipe.id, apiUrl, planId, onUpdated]);
 
   // ========== RENDER ==========
   return (

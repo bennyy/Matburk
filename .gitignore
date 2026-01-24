@@ -359,3 +359,6 @@ __marimo__/
 uploads/
 *.db*
 *.bak*
+firebase-data/
+backend/secrets/
+data/firebase/export/

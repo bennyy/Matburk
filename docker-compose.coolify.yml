@@ -10,9 +10,14 @@ services:
       MATBURK_DATABASE_URL: ${MATBURK_DATABASE_URL:-sqlite:////app/data/matplanerare.db}
       MATBURK_DATABASE_TYPE: ${MATBURK_DATABASE_TYPE:-sqlite}
       ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-https://yourdomain.com}
+      FIREBASE_AUTH_DISABLED: ${FIREBASE_AUTH_DISABLED:-false}
+      FIREBASE_USE_EMULATOR: ${FIREBASE_USE_EMULATOR:-false}
+      FIREBASE_PROJECT_ID: ${FIREBASE_PROJECT_ID}
+      FIREBASE_CREDENTIALS_FILE: ${FIREBASE_CREDENTIALS_FILE:-/app/secrets/firebase-service-account.json}
     volumes:
       - ./backend/uploads:/app/uploads
       - ./backend/data:/app/data
+      - ./backend/secrets:/app/secrets
     expose:
       - "8000"
     restart: unless-stopped
@@ -30,7 +35,8 @@ services:
       context: .
       dockerfile: Dockerfile.frontend
       args:
-        VITE_API_URL: http://backend:8000
+        VITE_API_URL: http://backend:8000/api
+        VITE_USE_FIREBASE_EMULATOR: false
     container_name: matburk_frontend
     depends_on:
       - backend

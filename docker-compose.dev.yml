@@ -1,0 +1,73 @@
+version: "3.8"
+
+services:
+  # Firebase Auth Emulator
+  firebase-emulator:
+    image: node:20-alpine
+    container_name: ${COMPOSE_PROJECT_NAME:-matburk}_firebase-emulator
+    working_dir: /firebase
+    command: sh -c "npm install -g firebase-tools > /dev/null 2>&1 && mkdir -p /firebase/data /firebase/data/export && chown -R 1000:1000 /firebase/data 2>/dev/null || true && firebase emulators:start --only auth --project demo-project --import /firebase/data/export --export-on-exit /firebase/data/export"
+    volumes:
+      - ./firebase.json:/firebase/firebase.json
+      - ./data/firebase:/firebase/data
+    ports:
+      - "9099:9099"
+      - "4400:4400"
+      - "4000:4000"
+    environment:
+      - FIREBASE_DATABASE_EMULATOR_HOST=0.0.0.0:9099
+    restart: unless-stopped
+    networks:
+      - matburk_network
+
+  # Backend API - Dev mode with hot reload
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    container_name: ${COMPOSE_PROJECT_NAME:-matburk}_backend
+    volumes:
+      - ./backend:/app
+      - ./backend/uploads:/app/uploads
+      - ./backend/data:/app/data
+    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+    environment:
+      PYTHONUNBUFFERED: "1"
+      MATBURK_DATABASE_URL: ${MATBURK_DATABASE_URL:-sqlite:////app/data/matplanerare.db}
+      MATBURK_DATABASE_TYPE: ${MATBURK_DATABASE_TYPE:-sqlite}
+      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-http://localhost:5173}
+      FIREBASE_AUTH_DISABLED: "false"
+      FIREBASE_USE_EMULATOR: ${FIREBASE_USE_EMULATOR:-true}
+      FIREBASE_PROJECT_ID: ${FIREBASE_PROJECT_ID:-demo-project}
+      FIREBASE_CREDENTIALS_FILE: ${FIREBASE_CREDENTIALS_FILE}
+    ports:
+      - "8000:8000"
+    depends_on:
+      - firebase-emulator
+    restart: unless-stopped
+    networks:
+      - matburk_network
+
+  # Frontend - Dev mode with Vite dev server
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
+    container_name: ${COMPOSE_PROJECT_NAME:-matburk}_frontend
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    environment:
+      - VITE_API_URL=http://localhost:8000/api
+      - VITE_USE_FIREBASE_EMULATOR=true
+    command: npm run dev -- --host 0.0.0.0
+    depends_on:
+      - backend
+    networks:
+      - matburk_network
+
+networks:
+  matburk_network:
+    driver: bridge

@@ -4,7 +4,7 @@ import axios from 'axios';
 import TagInput from './TagInput';
 
 /**
- * AddRecipe - Form for creating new recipes
+ * AddRecipe - Form for creating new recipes in a specific meal plan
  *
  * Handles recipe creation with:
  * - Basic info (name, portions)
@@ -12,7 +12,7 @@ import TagInput from './TagInput';
  * - Image upload (file or URL)
  * - Form submission and validation
  */
-export default function AddRecipe({ onAdded, apiUrl }) {
+export default function AddRecipe({ onAdded, apiUrl, planId }) {
   // ========== STATE MANAGEMENT ==========
   const [name, setName] = useState('');
   const [portions, setPortions] = useState(4);
@@ -51,7 +51,7 @@ export default function AddRecipe({ onAdded, apiUrl }) {
       if (imageUrl) formData.append('image_url', imageUrl);
 
       try {
-        await axios.post(`${apiUrl}/recipes`, formData, {
+        await axios.post(`${apiUrl}/plans/${planId}/recipes`, formData, {
           headers: { 'Content-Type': 'multipart/form-data' },
         });
 
@@ -64,7 +64,18 @@ export default function AddRecipe({ onAdded, apiUrl }) {
         setIsLoading(false);
       }
     },
-    [name, portions, tags, notes, link, imageUrl, apiUrl, onAdded, resetForm]
+    [
+      name,
+      portions,
+      tags,
+      notes,
+      link,
+      imageUrl,
+      apiUrl,
+      planId,
+      onAdded,
+      resetForm,
+    ]
   );
 
   // ========== RENDER ==========

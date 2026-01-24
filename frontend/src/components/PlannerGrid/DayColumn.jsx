@@ -20,22 +20,41 @@ export default function DayColumn({
 }) {
   return (
     <div
-      className={`bg-white rounded shadow-sm border overflow-hidden flex flex-col ${
-        isToday ? 'ring-2 ring-blue-400' : ''
+      className={`bg-white rounded-xl shadow-sm border overflow-hidden flex flex-col transition-all ${
+        isToday
+          ? 'ring-2 ring-blue-500 border-blue-300 shadow-lg'
+          : 'border-gray-200 hover:border-gray-300'
       }`}
     >
       {/* Day Header */}
       <div
-        className={`p-1 text-center font-bold text-sm uppercase ${
-          isToday ? 'bg-blue-600 text-white' : 'bg-slate-700 text-white'
+        className={`p-3 text-center font-bold text-sm transition-all ${
+          isToday
+            ? 'bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-md'
+            : 'bg-gradient-to-r from-gray-700 to-gray-800 text-white'
         }`}
       >
-        {format(day, 'EEE', { locale: sv })}{' '}
-        <span className="opacity-70 text-xs ml-1">{format(day, 'd/M')}</span>
+        <div className="flex items-center justify-center gap-2">
+          {isToday && (
+            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+              <path
+                fillRule="evenodd"
+                d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                clipRule="evenodd"
+              />
+            </svg>
+          )}
+          <span className="uppercase tracking-wide">
+            {format(day, 'EEE', { locale: sv })}
+          </span>
+        </div>
+        <span className="text-xs opacity-80 mt-1 block">
+          {format(day, 'd/M')}
+        </span>
       </div>
 
       {/* Meals Grid */}
-      <div className="flex flex-col p-1 gap-1 flex-1">
+      <div className="flex flex-col p-2 gap-2 flex-1">
         {meals.map((meal) => (
           <MealRow
             key={meal}

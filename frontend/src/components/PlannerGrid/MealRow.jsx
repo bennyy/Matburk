@@ -17,13 +17,32 @@ export default function MealRow({
   isPlannerLocked,
 }) {
   return (
-    <div className="flex-1 flex flex-col">
-      <span className="text-[10px] font-bold text-gray-400 uppercase text-center">
-        {meal}
-      </span>
+    <div className="flex-1 flex flex-col bg-gray-50 rounded-lg p-1.5 md:p-2">
+      <div className="flex items-center justify-center gap-1 mb-1.5 md:mb-2">
+        <svg
+          className="w-2.5 h-2.5 md:w-3 md:h-3 text-gray-400"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d={
+              meal === 'LUNCH'
+                ? 'M12 6v6m0 0v6m0-6h6m-6 0H6'
+                : 'M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z'
+            }
+          />
+        </svg>
+        <span className="text-[9px] md:text-[10px] font-bold text-gray-500 uppercase tracking-wide">
+          {meal}
+        </span>
+      </div>
 
       {/* Person Slots */}
-      <div className="flex gap-1 h-full min-h-[60px] p-0.5">
+      <div className="flex gap-1.5 md:gap-2 h-full min-h-[70px] md:min-h-[80px]">
         {peopleKeys.map((personKey) => {
           const dateStr = format(day, 'yyyy-MM-dd');
           const slot = plan.find(

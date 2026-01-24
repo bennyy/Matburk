@@ -1,0 +1,584 @@
+"""Recipe and meal plan slot endpoints for Matplanerare API."""
+
+from typing import Dict, List
+from datetime import date
+from fastapi import APIRouter, Depends, Form, HTTPException, status
+from sqlalchemy.orm import Session
+from sqlalchemy import func
+
+import auth
+import models
+import schemas
+import utils
+from database import get_db
+
+router = APIRouter(prefix="/api", tags=["recipes_and_plan"])
+
+# Configuration constants
+DEFAULT_PORTIONS = 4
+DEFAULT_PERSON_A = "Person A"
+DEFAULT_PERSON_B = "Person B"
+
+# Placeholder recipes configuration
+PLACEHOLDER_RECIPES = [
+    {"name": "🥡 Takeaway", "tags": "Snabbval"},
+    {"name": "🍽️ Äter ute", "tags": "Snabbval"},
+    {"name": "🥪 Fixar eget", "tags": "Snabbval"},
+    {"name": "🍕 Rester", "tags": "Snabbval"},
+]
+
+# Test recipes for initial seeding
+TEST_RECIPES = [
+    {"name": "Spaghetti Bolognese", "tags": "Italienskt, Pasta"},
+    {"name": "Kyckling Curry", "tags": "Asiatiskt, Kryddigt"},
+    {"name": "Vegetarisk Lasagne", "tags": "Italienskt, Vegetariskt"},
+    {"name": "Tacos", "tags": "Mexikanskt, Snabbt"},
+    {"name": "Lax med Citron och Dill", "tags": "Fisk, Hälsosamt"},
+    {"name": "Grillad Ostsmörgås", "tags": "Snabbt, Vegetariskt"},
+    {"name": "Caesarsallad", "tags": "Sallad, Lätt"},
+    {"name": "Chili con Carne", "tags": "Kryddigt, Gryta"},
+    {"name": "Pannkakor", "tags": "Sött, Frukost"},
+    {"name": "Sushi Bowl", "tags": "Japanskt, Hälsosamt"},
+]
+
+
+def _seed_recipes_for_plan(meal_plan_id: int, db: Session) -> None:
+    """Seed placeholder and test recipes for a meal plan."""
+    for recipe_data in PLACEHOLDER_RECIPES + TEST_RECIPES:
+        exists = (
+            db.query(models.RecipeDB)
+            .filter(
+                models.RecipeDB.meal_plan_id == meal_plan_id,
+                models.RecipeDB.name == recipe_data["name"],
+            )
+            .first()
+        )
+
+        if not exists:
+            # Parse and create tags
+            tag_names = [t.strip().lower() for t in recipe_data["tags"].split(",")]
+            tags = []
+            for tag_name in tag_names:
+                tag = (
+                    db.query(models.Tag)
+                    .filter(func.lower(models.Tag.name) == tag_name)
+                    .first()
+                )
+                if not tag:
+                    tag = models.Tag(name=tag_name)
+                    db.add(tag)
+                    db.flush()
+                tags.append(tag)
+
+            is_placeholder = recipe_data in PLACEHOLDER_RECIPES
+            db.add(
+                models.RecipeDB(
+                    meal_plan_id=meal_plan_id,
+                    name=recipe_data["name"],
+                    default_portions=1 if is_placeholder else DEFAULT_PORTIONS,
+                    is_placeholder=is_placeholder,
+                    is_test_recipe=recipe_data in TEST_RECIPES and not is_placeholder,
+                    tags=tags,
+                )
+            )
+
+    db.commit()
+
+
+# ============================================================================
+# RECIPE ENDPOINTS
+# ============================================================================
+
+
+@router.get("/plans/{plan_id}/recipes", response_model=List[schemas.Recipe])
+def get_recipes(
+    plan_id: int,
+    sort_by: str = "vote",
+    sort_order: str = "desc",
+    decoded_token: Dict = Depends(auth.verify_token),
+    db: Session = Depends(get_db),
+) -> List[schemas.Recipe]:
+    """Get all recipes in a meal plan with optional sorting.
+
+    User must have access to the plan.
+    """
+    user = auth.ensure_user_exists(decoded_token, db)
+
+    # Check access
+    if not utils.can_view_plan(user.id, plan_id, db):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You do not have access to this meal plan",
+        )
+
+    # Calculate meal count for recipes in this plan
+    meal_count_subquery = (
+        db.query(
+            models.PlanSlotDB.recipe_id,
+            func.count(models.PlanSlotDB.id).label("meal_count"),
+        )
+        .filter(
+            models.PlanSlotDB.meal_plan_id == plan_id,
+            models.PlanSlotDB.meal_type.in_(
+                [models.MealType.LUNCH, models.MealType.DINNER]
+            ),
+        )
+        .group_by(models.PlanSlotDB.recipe_id)
+        .subquery()
+    )
+
+    query = (
+        db.query(
+            models.RecipeDB,
+            func.coalesce(meal_count_subquery.c.meal_count, 0).label("meal_count"),
+        )
+        .outerjoin(
+            meal_count_subquery, models.RecipeDB.id == meal_count_subquery.c.recipe_id
+        )
+        .filter(
+            models.RecipeDB.meal_plan_id == plan_id,
+            ~models.RecipeDB.is_deleted,
+        )
+    )
+
+    # Determine sort column
+    if sort_by == "name":
+        column = func.lower(models.RecipeDB.name)
+    elif sort_by == "last_cooked":
+        column = models.RecipeDB.last_cooked_date
+    elif sort_by == "total_meals":
+        column = func.coalesce(meal_count_subquery.c.meal_count, 0)
+    elif sort_by == "created":
+        column = models.RecipeDB.created_at
+    else:
+        column = models.RecipeDB.vote_count
+
+    # Apply primary sort order
+    if sort_order == "asc":
+        if sort_by == "last_cooked":
+            query = query.order_by(column.asc().nullsfirst())
+        else:
+            query = query.order_by(column.asc())
+    else:
+        if sort_by == "last_cooked":
+            query = query.order_by(column.desc().nullslast())
+        else:
+            query = query.order_by(column.desc())
+
+    # Secondary sort by name for tie-breaking
+    query = query.order_by(func.lower(models.RecipeDB.name).asc())
+
+    results = query.all()
+    recipes = []
+    for row in results:
+        recipe = row[0]
+        recipe.meal_count = row[1]
+        recipes.append(recipe)
+
+    return recipes
+
+
+@router.post("/plans/{plan_id}/recipes", response_model=schemas.Recipe)
+async def create_recipe(
+    plan_id: int,
+    name: str = Form(...),
+    link: str = Form(None),
+    portions: int = Form(DEFAULT_PORTIONS),
+    tags: str = Form(""),
+    notes: str = Form(None),
+    image_url: str = Form(None),
+    is_test: bool = Form(False),
+    decoded_token: Dict = Depends(auth.verify_token),
+    db: Session = Depends(get_db),
+) -> schemas.Recipe:
+    """Create a new recipe in a meal plan.
+
+    User must have edit permission on the plan.
+    """
+    user = auth.ensure_user_exists(decoded_token, db)
+
+    # Check edit permission
+    if not utils.can_edit_plan(user.id, plan_id, db):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You do not have permission to edit this meal plan",
+        )
+
+    # Verify plan exists
+    meal_plan = db.query(models.MealPlan).filter(models.MealPlan.id == plan_id).first()
+    if not meal_plan:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Meal plan not found",
+        )
+
+    # Parse and create tags
+    tag_objects = []
+    if tags:
+        tag_names = [t.strip().lower() for t in tags.split(",")]
+        for tag_name in tag_names:
+            if tag_name:
+                tag = (
+                    db.query(models.Tag)
+                    .filter(func.lower(models.Tag.name) == tag_name)
+                    .first()
+                )
+                if not tag:
+                    tag = models.Tag(name=tag_name)
+                    db.add(tag)
+                    db.flush()
+                tag_objects.append(tag)
+
+    db_recipe = models.RecipeDB(
+        meal_plan_id=plan_id,
+        name=name,
+        link=link,
+        default_portions=portions,
+        notes=notes,
+        image_url=image_url,
+        is_test_recipe=is_test,
+        tags=tag_objects,
+    )
+
+    db.add(db_recipe)
+    db.commit()
+    db.refresh(db_recipe)
+    return db_recipe
+
+
+@router.put("/plans/{plan_id}/recipes/{recipe_id}", response_model=schemas.Recipe)
+async def update_recipe(
+    plan_id: int,
+    recipe_id: int,
+    name: str = Form(...),
+    link: str = Form(None),
+    portions: int = Form(DEFAULT_PORTIONS),
+    tags: str = Form(""),
+    notes: str = Form(None),
+    image_url: str = Form(None),
+    is_test: bool = Form(False),
+    decoded_token: Dict = Depends(auth.verify_token),
+    db: Session = Depends(get_db),
+) -> schemas.Recipe:
+    """Update a recipe in a meal plan.
+
+    User must have edit permission on the plan.
+    """
+    user = auth.ensure_user_exists(decoded_token, db)
+
+    # Check edit permission
+    if not utils.can_edit_plan(user.id, plan_id, db):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You do not have permission to edit this meal plan",
+        )
+
+    db_recipe = (
+        db.query(models.RecipeDB)
+        .filter(
+            models.RecipeDB.id == recipe_id,
+            models.RecipeDB.meal_plan_id == plan_id,
+        )
+        .first()
+    )
+
+    if not db_recipe:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Recipe not found",
+        )
+
+    # Update fields
+    db_recipe.name = name
+    db_recipe.link = link
+    db_recipe.image_url = image_url
+    db_recipe.default_portions = portions
+    db_recipe.notes = notes
+    db_recipe.is_test_recipe = is_test
+
+    # Update tags
+    tag_objects = []
+    if tags:
+        tag_names = [t.strip().lower() for t in tags.split(",")]
+        for tag_name in tag_names:
+            if tag_name:
+                tag = (
+                    db.query(models.Tag)
+                    .filter(func.lower(models.Tag.name) == tag_name)
+                    .first()
+                )
+                if not tag:
+                    tag = models.Tag(name=tag_name)
+                    db.add(tag)
+                    db.flush()
+                tag_objects.append(tag)
+
+    db_recipe.tags = tag_objects
+    db.commit()
+    db.refresh(db_recipe)
+    return db_recipe
+
+
+@router.put("/plans/{plan_id}/recipes/{recipe_id}/vote")
+def vote_recipe(
+    plan_id: int,
+    recipe_id: int,
+    decoded_token: Dict = Depends(auth.verify_token),
+    db: Session = Depends(get_db),
+) -> Dict[str, bool]:
+    """Vote for a recipe in a meal plan."""
+    user = auth.ensure_user_exists(decoded_token, db)
+
+    if not utils.can_view_plan(user.id, plan_id, db):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You do not have access to this meal plan",
+        )
+
+    recipe = (
+        db.query(models.RecipeDB)
+        .filter(
+            models.RecipeDB.id == recipe_id,
+            models.RecipeDB.meal_plan_id == plan_id,
+        )
+        .first()
+    )
+
+    if not recipe:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Recipe not found",
+        )
+
+    recipe.vote_count += 1
+    db.commit()
+    return {"ok": True}
+
+
+@router.delete("/plans/{plan_id}/recipes/{recipe_id}")
+def delete_recipe(
+    plan_id: int,
+    recipe_id: int,
+    decoded_token: Dict = Depends(auth.verify_token),
+    db: Session = Depends(get_db),
+) -> Dict[str, bool]:
+    """Delete a recipe in a meal plan."""
+    user = auth.ensure_user_exists(decoded_token, db)
+
+    if not utils.can_edit_plan(user.id, plan_id, db):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You do not have permission to edit this meal plan",
+        )
+
+    recipe = (
+        db.query(models.RecipeDB)
+        .filter(
+            models.RecipeDB.id == recipe_id,
+            models.RecipeDB.meal_plan_id == plan_id,
+        )
+        .first()
+    )
+
+    if not recipe:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Recipe not found",
+        )
+
+    recipe.is_deleted = True
+    db.commit()
+    return {"ok": True}
+
+
+# ============================================================================
+# MEAL PLAN SLOT ENDPOINTS
+# ============================================================================
+
+
+def _update_recipe_last_cooked(recipe_id: int, meal_plan_id: int, db: Session) -> None:
+    """Update a recipe's last_cooked_date based on plan slots."""
+    if not recipe_id:
+        return
+
+    max_date = (
+        db.query(func.max(models.PlanSlotDB.plan_date))
+        .filter(
+            models.PlanSlotDB.recipe_id == recipe_id,
+            models.PlanSlotDB.meal_plan_id == meal_plan_id,
+        )
+        .scalar()
+    )
+
+    recipe = db.query(models.RecipeDB).filter(models.RecipeDB.id == recipe_id).first()
+    if recipe:
+        recipe.last_cooked_date = max_date
+        if max_date and max_date >= date.today():
+            recipe.vote_count = 0
+        db.add(recipe)
+
+
+@router.get("/plans/{plan_id}/plan")
+def get_plan(
+    plan_id: int,
+    start_date: date,
+    end_date: date,
+    decoded_token: Dict = Depends(auth.verify_token),
+    db: Session = Depends(get_db),
+) -> List[schemas.PlanSlot]:
+    """Get meal plan slots for a date range.
+
+    User must have access to the plan.
+    """
+    user = auth.ensure_user_exists(decoded_token, db)
+
+    if not utils.can_view_plan(user.id, plan_id, db):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You do not have access to this meal plan",
+        )
+
+    return (
+        db.query(models.PlanSlotDB)
+        .filter(
+            models.PlanSlotDB.meal_plan_id == plan_id,
+            models.PlanSlotDB.plan_date >= start_date,
+            models.PlanSlotDB.plan_date <= end_date,
+        )
+        .all()
+    )
+
+
+@router.post("/plans/{plan_id}/plan", response_model=schemas.PlanSlot)
+def update_plan_slot(
+    plan_id: int,
+    slot: schemas.PlanSlotUpdate,
+    decoded_token: Dict = Depends(auth.verify_token),
+    db: Session = Depends(get_db),
+) -> schemas.PlanSlot:
+    """Update or create a meal plan slot.
+
+    User must have edit permission on the plan.
+    """
+    user = auth.ensure_user_exists(decoded_token, db)
+
+    if not utils.can_edit_plan(user.id, plan_id, db):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You do not have permission to edit this meal plan",
+        )
+
+    db_slot = (
+        db.query(models.PlanSlotDB)
+        .filter(
+            models.PlanSlotDB.meal_plan_id == plan_id,
+            models.PlanSlotDB.plan_date == slot.plan_date,
+            models.PlanSlotDB.meal_type == slot.meal_type,
+            models.PlanSlotDB.person == slot.person,
+        )
+        .first()
+    )
+
+    if not db_slot:
+        db_slot = models.PlanSlotDB(
+            meal_plan_id=plan_id,
+            plan_date=slot.plan_date,
+            meal_type=slot.meal_type,
+            person=slot.person,
+        )
+        db.add(db_slot)
+
+    old_recipe_id = db_slot.recipe_id
+    new_recipe_id = slot.recipe_id
+
+    db_slot.recipe_id = new_recipe_id
+    db.commit()
+
+    if new_recipe_id:
+        _update_recipe_last_cooked(new_recipe_id, plan_id, db)
+
+    if old_recipe_id and old_recipe_id != new_recipe_id:
+        _update_recipe_last_cooked(old_recipe_id, plan_id, db)
+
+    db.commit()
+    return db_slot
+
+
+# ============================================================================
+# MEAL PLAN SETTINGS ENDPOINTS
+# ============================================================================
+
+
+def _get_setting(meal_plan_id: int, key: str, default: str, db: Session) -> str:
+    """Get a setting value with default fallback."""
+    setting = (
+        db.query(models.MealPlanSetting)
+        .filter(
+            models.MealPlanSetting.meal_plan_id == meal_plan_id,
+            models.MealPlanSetting.key == key,
+        )
+        .first()
+    )
+    return setting.value if setting else default
+
+
+def _update_setting(meal_plan_id: int, key: str, value: str, db: Session) -> None:
+    """Update or create a setting."""
+    setting = (
+        db.query(models.MealPlanSetting)
+        .filter(
+            models.MealPlanSetting.meal_plan_id == meal_plan_id,
+            models.MealPlanSetting.key == key,
+        )
+        .first()
+    )
+
+    if not setting:
+        setting = models.MealPlanSetting(meal_plan_id=meal_plan_id, key=key)
+        db.add(setting)
+
+    setting.value = value
+
+
+@router.get("/plans/{plan_id}/settings", response_model=schemas.MealPlanSettings)
+def get_settings(
+    plan_id: int,
+    decoded_token: Dict = Depends(auth.verify_token),
+    db: Session = Depends(get_db),
+) -> schemas.MealPlanSettings:
+    """Get settings for a meal plan."""
+    user = auth.ensure_user_exists(decoded_token, db)
+
+    if not utils.can_view_plan(user.id, plan_id, db):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You do not have access to this meal plan",
+        )
+
+    # Safely parse optional user IDs, handling empty strings gracefully
+    return schemas.MealPlanSettings(
+        name_A=_get_setting(plan_id, "name_A", DEFAULT_PERSON_A, db),
+        name_B=_get_setting(plan_id, "name_B", DEFAULT_PERSON_B, db),
+    )
+
+
+@router.post("/plans/{plan_id}/settings")
+def update_settings(
+    plan_id: int,
+    settings: schemas.MealPlanSettings,
+    decoded_token: Dict = Depends(auth.verify_token),
+    db: Session = Depends(get_db),
+) -> Dict[str, bool]:
+    """Update settings for a meal plan."""
+    user = auth.ensure_user_exists(decoded_token, db)
+
+    if not utils.can_edit_plan(user.id, plan_id, db):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You do not have permission to edit this meal plan",
+        )
+
+    _update_setting(plan_id, "name_A", settings.name_A, db)
+    _update_setting(plan_id, "name_B", settings.name_B, db)
+    db.commit()
+    return {"ok": True}

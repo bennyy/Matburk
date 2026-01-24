@@ -12,25 +12,27 @@ export default function MealSlot({
   const getSlotStyle = () => {
     if (isLocked) {
       return isPlaceholder
-        ? 'bg-amber-50 border-amber-200 text-amber-900 hover:bg-amber-100 italic'
-        : 'bg-green-50 border-green-200 text-gray-800 hover:bg-green-100';
+        ? 'bg-gradient-to-br from-amber-50 to-amber-100 border-amber-300 text-amber-900 italic shadow-sm'
+        : 'bg-gradient-to-br from-green-50 to-green-100 border-green-300 text-gray-800 shadow-sm';
     }
     if (isActive) {
-      return 'bg-blue-600 text-white border-blue-600 ring-2 ring-blue-300 ring-inset';
+      return 'bg-gradient-to-br from-blue-600 to-blue-700 text-white border-blue-500 ring-2 ring-blue-300 shadow-lg transform scale-105';
     }
     if (recipe) {
       return isPlaceholder
-        ? 'bg-amber-50 border-amber-200 text-amber-900 hover:bg-amber-100 italic'
-        : 'bg-green-50 border-green-200 text-gray-800 hover:bg-green-100';
+        ? 'bg-gradient-to-br from-amber-50 to-amber-100 border-amber-300 text-amber-900 hover:from-amber-100 hover:to-amber-200 hover:shadow-md italic'
+        : 'bg-gradient-to-br from-green-50 to-green-100 border-green-300 text-gray-800 hover:from-green-100 hover:to-green-200 hover:shadow-md';
     }
-    return 'bg-gray-50 border-dashed hover:bg-gray-100 text-gray-300';
+    return 'bg-white border border-dashed border-gray-300 hover:bg-gray-50 hover:border-blue-400 text-gray-400';
   };
 
   return (
     <div
       onClick={onClick}
-      className={`flex-1 min-w-0 rounded border flex flex-col items-center justify-center p-1 text-center transition-colors ${
-        isLocked ? 'cursor-not-allowed opacity-90' : 'cursor-pointer'
+      className={`flex-1 min-w-0 rounded-lg border flex flex-col items-center justify-center p-2 text-center transition-all duration-200 ${
+        isLocked
+          ? 'cursor-not-allowed opacity-90'
+          : 'cursor-pointer hover:-translate-y-0.5'
       } ${getSlotStyle()}`}
       role="button"
       tabIndex={isLocked ? -1 : 0}
@@ -38,23 +40,59 @@ export default function MealSlot({
     >
       {recipe ? (
         <div className="w-full">
-          <div className="text-xs font-semibold leading-tight px-1 break-words whitespace-normal">
+          <div className="text-xs font-bold leading-tight px-1 break-words whitespace-normal mb-1">
             {recipe.name}
           </div>
-          <div
-            className={`text-[9px] mt-0.5 ${
-              isLocked
-                ? 'text-gray-400'
-                : isActive
-                  ? 'text-blue-200'
-                  : 'text-gray-400'
-            }`}
-          >
-            {displayName}
+          <div className="flex items-center justify-center gap-1">
+            <svg
+              className={`w-3 h-3 ${
+                isLocked
+                  ? 'text-gray-400'
+                  : isActive
+                    ? 'text-blue-200'
+                    : 'text-gray-400'
+              }`}
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+              />
+            </svg>
+            <span
+              className={`text-[9px] font-medium ${
+                isLocked
+                  ? 'text-gray-500'
+                  : isActive
+                    ? 'text-blue-100'
+                    : 'text-gray-500'
+              }`}
+            >
+              {displayName}
+            </span>
           </div>
         </div>
       ) : (
-        <span className="font-bold">{displayName}</span>
+        <div className="flex flex-col items-center gap-1">
+          <svg
+            className="w-5 h-5"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+            />
+          </svg>
+          <span className="font-semibold text-xs">{displayName}</span>
+        </div>
       )}
     </div>
   );
