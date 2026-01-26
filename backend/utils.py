@@ -31,9 +31,7 @@ def generate_token(length: int = 24) -> str:
     return "".join(secrets.choice(chars) for _ in range(length))
 
 
-def get_user_permission_for_plan(
-    user_id: int, meal_plan_id: int, db: Session
-) -> Optional[models.Permission]:
+def get_user_permission_for_plan(user_id: int, meal_plan_id: int, db: Session) -> Optional[models.Permission]:
     """Get the permission level for a user on a specific meal plan.
 
     Args:

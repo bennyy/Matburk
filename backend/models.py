@@ -53,9 +53,7 @@ recipe_tags = Table(
         ForeignKey("recipes.id", ondelete="CASCADE"),
         primary_key=True,
     ),
-    Column(
-        "tag_id", Integer, ForeignKey("tags.id", ondelete="CASCADE"), primary_key=True
-    ),
+    Column("tag_id", Integer, ForeignKey("tags.id", ondelete="CASCADE"), primary_key=True),
 )
 
 
@@ -68,9 +66,7 @@ class Tag(Base):
     name: Mapped[str] = mapped_column(String, unique=True, nullable=False, index=True)
 
     # Relationship
-    recipes: Mapped[List["RecipeDB"]] = relationship(
-        "RecipeDB", secondary=recipe_tags, back_populates="tags"
-    )
+    recipes: Mapped[List["RecipeDB"]] = relationship("RecipeDB", secondary=recipe_tags, back_populates="tags")
 
 
 class User(Base):
@@ -79,15 +75,11 @@ class User(Base):
     __tablename__ = "users"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
-    firebase_uid: Mapped[str] = mapped_column(
-        String, unique=True, nullable=False, index=True
-    )
+    firebase_uid: Mapped[str] = mapped_column(String, unique=True, nullable=False, index=True)
     email: Mapped[str] = mapped_column(String, unique=True, nullable=False, index=True)
 
     # Audit columns
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime, default=datetime.utcnow, nullable=False
-    )
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at: Mapped[datetime] = mapped_column(
         DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False
     )
@@ -98,12 +90,8 @@ class User(Base):
         back_populates="created_by_user",
         foreign_keys="MealPlan.created_by_user_id",
     )
-    meal_plan_accesses: Mapped[List["UserMealPlanAccess"]] = relationship(
-        "UserMealPlanAccess", back_populates="user"
-    )
-    shared_codes: Mapped[List["MealPlanShare"]] = relationship(
-        "MealPlanShare", back_populates="created_by_user"
-    )
+    meal_plan_accesses: Mapped[List["UserMealPlanAccess"]] = relationship("UserMealPlanAccess", back_populates="user")
+    shared_codes: Mapped[List["MealPlanShare"]] = relationship("MealPlanShare", back_populates="created_by_user")
 
 
 class MealPlan(Base):
@@ -113,31 +101,23 @@ class MealPlan(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
     name: Mapped[str] = mapped_column(String, nullable=False)
-    created_by_user_id: Mapped[int] = mapped_column(
-        Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False
-    )
+    created_by_user_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
 
     # Audit columns
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime, default=datetime.utcnow, nullable=False
-    )
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at: Mapped[datetime] = mapped_column(
         DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False
     )
 
     # Relationships
-    created_by_user: Mapped[User] = relationship(
-        "User", back_populates="meal_plans", foreign_keys=[created_by_user_id]
-    )
+    created_by_user: Mapped[User] = relationship("User", back_populates="meal_plans", foreign_keys=[created_by_user_id])
     user_accesses: Mapped[List["UserMealPlanAccess"]] = relationship(
         "UserMealPlanAccess", back_populates="meal_plan", cascade="all, delete-orphan"
     )
     share_codes: Mapped[List["MealPlanShare"]] = relationship(
         "MealPlanShare", back_populates="meal_plan", cascade="all, delete-orphan"
     )
-    recipes: Mapped[List["RecipeDB"]] = relationship(
-        "RecipeDB", back_populates="meal_plan"
-    )
+    recipes: Mapped[List["RecipeDB"]] = relationship("RecipeDB", back_populates="meal_plan")
     plan_slots: Mapped[List["PlanSlotDB"]] = relationship(
         "PlanSlotDB", back_populates="meal_plan", cascade="all, delete-orphan"
     )
@@ -161,23 +141,17 @@ class UserMealPlanAccess(Base):
         nullable=False,
         index=True,
     )
-    permission: Mapped[Permission] = mapped_column(
-        SQLEnum(Permission), nullable=False, default=Permission.VIEW
-    )
+    permission: Mapped[Permission] = mapped_column(SQLEnum(Permission), nullable=False, default=Permission.VIEW)
 
     # Audit columns
-    joined_at: Mapped[datetime] = mapped_column(
-        DateTime, default=datetime.utcnow, nullable=False
-    )
+    joined_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
 
     # Unique constraint to prevent duplicate access
     __table_args__ = (UniqueConstraint("user_id", "meal_plan_id", name="uq_user_plan"),)
 
     # Relationships
     user: Mapped[User] = relationship("User", back_populates="meal_plan_accesses")
-    meal_plan: Mapped[MealPlan] = relationship(
-        "MealPlan", back_populates="user_accesses"
-    )
+    meal_plan: Mapped[MealPlan] = relationship("MealPlan", back_populates="user_accesses")
 
 
 class MealPlanShare(Base):
@@ -195,28 +169,18 @@ class MealPlanShare(Base):
         nullable=False,
         index=True,
     )
-    share_code: Mapped[str] = mapped_column(
-        String, unique=True, nullable=False, index=True
-    )
-    permission: Mapped[Permission] = mapped_column(
-        SQLEnum(Permission), nullable=False, default=Permission.VIEW
-    )
+    share_code: Mapped[str] = mapped_column(String, unique=True, nullable=False, index=True)
+    permission: Mapped[Permission] = mapped_column(SQLEnum(Permission), nullable=False, default=Permission.VIEW)
     is_one_time: Mapped[bool] = mapped_column(Boolean, default=False)
     consumed_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
-    created_by_user_id: Mapped[int] = mapped_column(
-        Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True
-    )
+    created_by_user_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
 
     # Audit columns
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime, default=datetime.utcnow, nullable=False
-    )
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
 
     # Relationships
     meal_plan: Mapped[MealPlan] = relationship("MealPlan", back_populates="share_codes")
-    created_by_user: Mapped[Optional[User]] = relationship(
-        "User", back_populates="shared_codes"
-    )
+    created_by_user: Mapped[Optional[User]] = relationship("User", back_populates="shared_codes")
 
 
 class RecipeDB(Base):
@@ -244,18 +208,14 @@ class RecipeDB(Base):
     vote_count: Mapped[int] = mapped_column(Integer, default=0)
 
     # Audit columns
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime, default=datetime.utcnow, nullable=False
-    )
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at: Mapped[datetime] = mapped_column(
         DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False
     )
 
     # Relationships
     meal_plan: Mapped[MealPlan] = relationship("MealPlan", back_populates="recipes")
-    tags: Mapped[List["Tag"]] = relationship(
-        "Tag", secondary=recipe_tags, back_populates="recipes"
-    )
+    tags: Mapped[List["Tag"]] = relationship("Tag", secondary=recipe_tags, back_populates="recipes")
 
 
 class PlanSlotDB(Base):
@@ -278,9 +238,7 @@ class PlanSlotDB(Base):
     )
 
     # Audit columns
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime, default=datetime.utcnow, nullable=False
-    )
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at: Mapped[datetime] = mapped_column(
         DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False
     )
@@ -317,9 +275,7 @@ class MealPlanSetting(Base):
     value: Mapped[str] = mapped_column(String, nullable=False)
 
     # Unique constraint per meal plan
-    __table_args__ = (
-        UniqueConstraint("meal_plan_id", "key", name="uq_meal_plan_setting"),
-    )
+    __table_args__ = (UniqueConstraint("meal_plan_id", "key", name="uq_meal_plan_setting"),)
 
     # Relationships
     meal_plan: Mapped[MealPlan] = relationship("MealPlan", back_populates="settings")

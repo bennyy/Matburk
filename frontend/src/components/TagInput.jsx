@@ -52,13 +52,13 @@ const TagInput = ({ value, onChange, placeholder }) => {
 
   return (
     <div
-      className="flex flex-wrap items-center gap-2 border p-2 rounded focus-within:ring-2 focus-within:ring-blue-500 bg-white cursor-text"
+      className="flex flex-wrap items-center gap-2 px-4 py-3 border border-gray-300 rounded-lg focus-within:ring-2 focus-within:ring-green-500 focus-within:border-transparent bg-white cursor-text transition-all"
       onClick={() => document.getElementById('tag-input-field').focus()}
     >
       {tags.map((tag, index) => (
         <span
           key={index}
-          className="bg-blue-100 text-blue-800 text-xs font-semibold px-2 py-1 rounded flex items-center gap-1"
+          className="bg-green-100 text-green-800 text-sm font-medium px-3 py-1 rounded-full flex items-center gap-1"
         >
           {tag}
           <button
@@ -67,7 +67,7 @@ const TagInput = ({ value, onChange, placeholder }) => {
               e.stopPropagation();
               removeTag(index);
             }}
-            className="text-blue-500 hover:text-blue-700 font-bold focus:outline-none"
+            className="text-green-600 hover:text-green-800 font-bold focus:outline-none ml-1"
           >
             &times;
           </button>
@@ -77,7 +77,7 @@ const TagInput = ({ value, onChange, placeholder }) => {
       <input
         id="tag-input-field"
         type="text"
-        className="flex-1 outline-none min-w-[100px] text-sm"
+        className="flex-1 outline-none min-w-[120px] text-sm placeholder-gray-400"
         placeholder={tags.length === 0 ? placeholder : ''}
         value={inputValue}
         onChange={(e) => setInputValue(e.target.value)}

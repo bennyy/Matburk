@@ -3,6 +3,7 @@
 from typing import Dict, List
 from datetime import datetime
 from fastapi import APIRouter, Depends, HTTPException, status
+from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 import auth
@@ -43,8 +44,6 @@ async def register_user(
 # ==========================================================================
 # MEAL PLAN NAME UPDATE ENDPOINT
 # ==========================================================================
-
-from pydantic import BaseModel
 
 
 class MealPlanNameUpdate(BaseModel):
@@ -128,11 +127,7 @@ async def create_meal_plan(
     if DB_TYPE == "sqlite":
         from routes_recipes import _seed_recipes_for_plan
 
-        recipe_count = (
-            db.query(models.RecipeDB)
-            .filter(models.RecipeDB.meal_plan_id == meal_plan.id)
-            .count()
-        )
+        recipe_count = db.query(models.RecipeDB).filter(models.RecipeDB.meal_plan_id == meal_plan.id).count()
         if recipe_count == 0:
             _seed_recipes_for_plan(meal_plan.id, db)
 
@@ -262,11 +257,7 @@ async def join_meal_plan(
     """Join a meal plan using a share code or one-time invite token."""
     user = auth.ensure_user_exists(decoded_token, db)
 
-    share = (
-        db.query(models.MealPlanShare)
-        .filter(models.MealPlanShare.share_code == share_code)
-        .first()
-    )
+    share = db.query(models.MealPlanShare).filter(models.MealPlanShare.share_code == share_code).first()
 
     if not share:
         raise HTTPException(
@@ -336,11 +327,7 @@ async def list_share_codes(
             detail="Only plan owners or editors can view share codes",
         )
 
-    shares = (
-        db.query(models.MealPlanShare)
-        .filter(models.MealPlanShare.meal_plan_id == plan_id)
-        .all()
-    )
+    shares = db.query(models.MealPlanShare).filter(models.MealPlanShare.meal_plan_id == plan_id).all()
 
     return [schemas.MealPlanShare.model_validate(s) for s in shares]
 
@@ -391,11 +378,7 @@ async def create_one_time_invite(
     # Generate unique token
     while True:
         token = utils.generate_token(32)
-        exists = (
-            db.query(models.MealPlanShare)
-            .filter(models.MealPlanShare.share_code == token)
-            .first()
-        )
+        exists = db.query(models.MealPlanShare).filter(models.MealPlanShare.share_code == token).first()
         if not exists:
             break
 
@@ -481,10 +464,7 @@ def leave_meal_plan(
     if access.permission == models.Permission.OWNER:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=(
-                "Plan owners cannot leave the plan. Please transfer ownership "
-                "or delete the plan instead."
-            ),
+            detail=("Plan owners cannot leave the plan. Please transfer ownership " "or delete the plan instead."),
         )
 
     db.delete(access)

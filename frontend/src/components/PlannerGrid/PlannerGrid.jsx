@@ -215,7 +215,7 @@ export default function PlannerGrid({
     setRemovedRecipeIds((prev) => {
       return prev.filter((id) => recipeIdsInWeek.includes(id));
     });
-  }, [plan, recipes, currentWeekStart]);
+  }, [plan, recipes, currentWeekStart, removedRecipeIds]);
 
   // ========== HANDLERS ==========
   /**
@@ -1161,7 +1161,7 @@ export default function PlannerGrid({
 
           {/* Calendar Grid */}
           <div className="flex-1 overflow-y-auto overflow-x-auto p-2 md:p-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-7 gap-2 pb-20">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2 pb-20">
               {days.map((day) => {
                 const isToday = isSameDay(day, new Date());
                 return (

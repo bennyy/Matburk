@@ -13,11 +13,10 @@ services:
       FIREBASE_AUTH_DISABLED: ${FIREBASE_AUTH_DISABLED:-false}
       FIREBASE_USE_EMULATOR: ${FIREBASE_USE_EMULATOR:-false}
       FIREBASE_PROJECT_ID: ${FIREBASE_PROJECT_ID}
-      FIREBASE_CREDENTIALS_FILE: ${FIREBASE_CREDENTIALS_FILE:-/app/secrets/firebase-service-account.json}
+      FIREBASE_CREDENTIALS_BASE64: ${FIREBASE_CREDENTIALS_BASE64}
     volumes:
       - ./backend/uploads:/app/uploads
       - ./backend/data:/app/data
-      - ./backend/secrets:/app/secrets
     expose:
       - "8000"
     restart: unless-stopped

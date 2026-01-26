@@ -20,6 +20,7 @@ export default [
         document: 'readonly',
         FormData: 'readonly',
         window: 'readonly',
+        setTimeout: 'readonly',
       },
       parserOptions: {
         ecmaFeatures: {

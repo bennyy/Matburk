@@ -11,6 +11,7 @@ To use the Firebase Auth Emulator:
 3. Set FIREBASE_USE_EMULATOR=true
 """
 
+import base64
 import json
 import os
 from typing import Any, Dict, Optional
@@ -30,8 +31,7 @@ AUTH_DISABLED = os.getenv("FIREBASE_AUTH_DISABLED", "false").lower() == "true"
 USE_EMULATOR = os.getenv("FIREBASE_USE_EMULATOR", "false").lower() == "true"
 
 # Firebase configuration options
-_FIREBASE_CREDENTIALS_FILE = os.getenv("FIREBASE_CREDENTIALS_FILE")
-_FIREBASE_CREDENTIALS_JSON = os.getenv("FIREBASE_CREDENTIALS_JSON")
+_FIREBASE_CREDENTIALS_BASE64 = os.getenv("FIREBASE_CREDENTIALS_BASE64")
 _FIREBASE_PROJECT_ID = os.getenv("FIREBASE_PROJECT_ID", "demo-project")
 
 _security = HTTPBearer(auto_error=True)
@@ -55,28 +55,23 @@ def _init_firebase_app() -> Optional[firebase_admin.App]:
             _firebase_app = firebase_admin.get_app()
         except ValueError:
             # Initialize with no credentials for emulator (it doesn't validate them)
-            _firebase_app = firebase_admin.initialize_app(
-                None, {"projectId": _FIREBASE_PROJECT_ID}
-            )
-        print(
-            f"🔥 Firebase Admin SDK initialized for emulator (project: {_FIREBASE_PROJECT_ID})"
-        )
+            _firebase_app = firebase_admin.initialize_app(None, {"projectId": _FIREBASE_PROJECT_ID})
+        print(f"🔥 Firebase Admin SDK initialized for emulator (project: {_FIREBASE_PROJECT_ID})")
         return _firebase_app
 
     # Choose credential source for production
     cred: credentials.Base = None  # type: ignore[assignment]
     try:
-        if _FIREBASE_CREDENTIALS_JSON:
-            cred_dict = json.loads(_FIREBASE_CREDENTIALS_JSON)
+        if _FIREBASE_CREDENTIALS_BASE64:
+            decoded_json = base64.b64decode(_FIREBASE_CREDENTIALS_BASE64).decode("utf-8")
+            cred_dict = json.loads(decoded_json)
             cred = credentials.Certificate(cred_dict)
-        elif _FIREBASE_CREDENTIALS_FILE:
-            cred = credentials.Certificate(_FIREBASE_CREDENTIALS_FILE)
         else:
             cred = credentials.ApplicationDefault()
     except Exception as exc:  # pragma: no cover - setup failure
         raise RuntimeError(
-            "Failed to load Firebase credentials. Set FIREBASE_CREDENTIALS_FILE"
-            " or FIREBASE_CREDENTIALS_JSON."
+            "Failed to load Firebase credentials. Set FIREBASE_CREDENTIALS_BASE64"
+            " or provide Application Default Credentials."
         ) from exc
 
     options = {"projectId": _FIREBASE_PROJECT_ID} if _FIREBASE_PROJECT_ID else None
@@ -173,9 +168,7 @@ def ensure_user_exists(decoded_token: Dict[str, Any], db: Session) -> Any:
         )
 
     # Try find by firebase_uid first
-    user = (
-        db.query(models.User).filter(models.User.firebase_uid == firebase_uid).first()
-    )
+    user = db.query(models.User).filter(models.User.firebase_uid == firebase_uid).first()
 
     if not user:
         # Fallback: find by email to handle emulator uid changes

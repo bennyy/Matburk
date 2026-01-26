@@ -59,11 +59,7 @@ def _seed_recipes_for_plan(meal_plan_id: int, db: Session) -> None:
             tag_names = [t.strip().lower() for t in recipe_data["tags"].split(",")]
             tags = []
             for tag_name in tag_names:
-                tag = (
-                    db.query(models.Tag)
-                    .filter(func.lower(models.Tag.name) == tag_name)
-                    .first()
-                )
+                tag = db.query(models.Tag).filter(func.lower(models.Tag.name) == tag_name).first()
                 if not tag:
                     tag = models.Tag(name=tag_name)
                     db.add(tag)
@@ -119,9 +115,7 @@ def get_recipes(
         )
         .filter(
             models.PlanSlotDB.meal_plan_id == plan_id,
-            models.PlanSlotDB.meal_type.in_(
-                [models.MealType.LUNCH, models.MealType.DINNER]
-            ),
+            models.PlanSlotDB.meal_type.in_([models.MealType.LUNCH, models.MealType.DINNER]),
         )
         .group_by(models.PlanSlotDB.recipe_id)
         .subquery()
@@ -132,9 +126,7 @@ def get_recipes(
             models.RecipeDB,
             func.coalesce(meal_count_subquery.c.meal_count, 0).label("meal_count"),
         )
-        .outerjoin(
-            meal_count_subquery, models.RecipeDB.id == meal_count_subquery.c.recipe_id
-        )
+        .outerjoin(meal_count_subquery, models.RecipeDB.id == meal_count_subquery.c.recipe_id)
         .filter(
             models.RecipeDB.meal_plan_id == plan_id,
             ~models.RecipeDB.is_deleted,
@@ -218,11 +210,7 @@ async def create_recipe(
         tag_names = [t.strip().lower() for t in tags.split(",")]
         for tag_name in tag_names:
             if tag_name:
-                tag = (
-                    db.query(models.Tag)
-                    .filter(func.lower(models.Tag.name) == tag_name)
-                    .first()
-                )
+                tag = db.query(models.Tag).filter(func.lower(models.Tag.name) == tag_name).first()
                 if not tag:
                     tag = models.Tag(name=tag_name)
                     db.add(tag)
@@ -302,11 +290,7 @@ async def update_recipe(
         tag_names = [t.strip().lower() for t in tags.split(",")]
         for tag_name in tag_names:
             if tag_name:
-                tag = (
-                    db.query(models.Tag)
-                    .filter(func.lower(models.Tag.name) == tag_name)
-                    .first()
-                )
+                tag = db.query(models.Tag).filter(func.lower(models.Tag.name) == tag_name).first()
                 if not tag:
                     tag = models.Tag(name=tag_name)
                     db.add(tag)
