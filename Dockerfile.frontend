@@ -22,45 +22,41 @@ RUN npm ci
 
 COPY frontend/ .
 
-CMD ["tail", "-f", "/dev/null"]
+RUN npm run build
 
-#RUN npm run build --verbose
+# ---------- Runtime stage ----------
+FROM nginx:alpine
 
+# Nginx config, fast port 3000
+COPY <<EOF /etc/nginx/conf.d/default.conf
+server {
+    listen 3000;
+    server_name _;
 
+    root /usr/share/nginx/html;
+    index index.html;
 
-# # ---------- Runtime stage ----------
-# FROM nginx:alpine
+    gzip on;
+    gzip_types text/plain text/css application/json application/javascript text/xml application/xml application/xml+rss text/javascript;
 
-# # Nginx config, fast port 3000
-# COPY <<EOF /etc/nginx/conf.d/default.conf
-# server {
-#     listen 3000;
-#     server_name _;
+    location ~* \.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)$ {
+        expires 1y;
+        add_header Cache-Control "public, immutable";
+    }
 
-#     root /usr/share/nginx/html;
-#     index index.html;
+    location / {
+        try_files \$uri \$uri/index.html /index.html =404;
+        add_header Cache-Control "no-cache, no-store, must-revalidate";
+    }
+}
+EOF
 
-#     gzip on;
-#     gzip_types text/plain text/css application/json application/javascript text/xml application/xml application/xml+rss text/javascript;
+COPY --from=builder /app/dist /usr/share/nginx/html
+COPY frontend/print.html /usr/share/nginx/html/print.html
 
-#     location ~* \.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)$ {
-#         expires 1y;
-#         add_header Cache-Control "public, immutable";
-#     }
+EXPOSE 3000
 
-#     location / {
-#         try_files \$uri \$uri/index.html /index.html =404;
-#         add_header Cache-Control "no-cache, no-store, must-revalidate";
-#     }
-# }
-# EOF
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+    CMD wget --quiet --tries=1 --spider http://localhost:3000/ || exit 1
 
-# COPY --from=builder /app/dist /usr/share/nginx/html
-# COPY frontend/print.html /usr/share/nginx/html/print.html
-
-# EXPOSE 3000
-
-# HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-#     CMD wget --quiet --tries=1 --spider http://localhost:3000/ || exit 1
-
-# CMD ["nginx", "-g", "daemon off;"]
+CMD ["nginx", "-g", "daemon off;"]
