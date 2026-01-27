@@ -22,7 +22,11 @@ RUN npm ci
 
 COPY frontend/ .
 
+CMD ["tail", "-f", "/dev/null"]
+
 RUN npm run build --verbose
+
+
 
 # ---------- Runtime stage ----------
 FROM nginx:alpine
