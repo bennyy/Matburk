@@ -234,6 +234,131 @@ async def create_recipe(
     return db_recipe
 
 
+@router.post("/plans/{plan_id}/recipes/bulk/import")
+async def bulk_import_recipes(
+    plan_id: int,
+    csv_data: str = Form(...),
+    decoded_token: Dict = Depends(auth.verify_token),
+    db: Session = Depends(get_db),
+) -> Dict:
+    """Bulk import recipes from CSV/TSV data.
+
+    Expected format (semicolon-separated):
+    title;tags;recipe_url;image_url;portions
+
+    - title: Required, recipe name
+    - tags: Optional, comma-separated tag list
+    - recipe_url: Optional, URL to recipe
+    - image_url: Optional, URL to recipe image
+    - portions: Optional, default portions (defaults to 4)
+    - Use 'null' to skip a field
+
+    Returns summary with created and error counts.
+    """
+    user = auth.ensure_user_exists(decoded_token, db)
+
+    # Check edit permission
+    if not utils.can_edit_plan(user.id, plan_id, db):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You do not have permission to edit this meal plan",
+        )
+
+    # Verify plan exists
+    meal_plan = db.query(models.MealPlan).filter(models.MealPlan.id == plan_id).first()
+    if not meal_plan:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Meal plan not found",
+        )
+
+    created_count = 0
+    error_count = 0
+    errors = []
+
+    # Parse CSV data
+    lines = csv_data.strip().split("\n")
+    for line_num, line in enumerate(lines, 1):
+        if not line.strip():
+            continue
+
+        try:
+            # Split by semicolon
+            parts = [p.strip() for p in line.split(";")]
+
+            # Ensure we have at least title
+            if not parts or not parts[0]:
+                error_count += 1
+                errors.append(f"Line {line_num}: Missing title")
+                continue
+
+            title = parts[0]
+            if title.lower() == "null" or not title:
+                error_count += 1
+                errors.append(f"Line {line_num}: Missing title")
+                continue
+
+            # Parse optional fields
+            tags_str = parts[1] if len(parts) > 1 and parts[1].lower() != "null" else ""
+            recipe_url = parts[2] if len(parts) > 2 and parts[2].lower() != "null" else None
+            image_url = parts[3] if len(parts) > 3 and parts[3].lower() != "null" else None
+            portions_str = parts[4] if len(parts) > 4 and parts[4].lower() != "null" else DEFAULT_PORTIONS
+
+            # Parse portions
+            try:
+                portions = int(portions_str) if portions_str else DEFAULT_PORTIONS
+                portions = max(1, portions)  # Ensure at least 1
+            except (ValueError, TypeError):
+                portions = DEFAULT_PORTIONS
+
+            # Parse and create tags
+            tag_objects = []
+            if tags_str:
+                tag_names = [t.strip().lower() for t in tags_str.split(",")]
+                for tag_name in tag_names:
+                    if tag_name:
+                        tag = db.query(models.Tag).filter(func.lower(models.Tag.name) == tag_name).first()
+                        if not tag:
+                            tag = models.Tag(name=tag_name)
+                            db.add(tag)
+                            db.flush()
+                        tag_objects.append(tag)
+
+            # Create recipe
+            db_recipe = models.RecipeDB(
+                meal_plan_id=plan_id,
+                name=title,
+                link=recipe_url,
+                default_portions=portions,
+                image_url=image_url,
+                tags=tag_objects,
+            )
+
+            db.add(db_recipe)
+            created_count += 1
+
+        except Exception as e:
+            error_count += 1
+            errors.append(f"Line {line_num}: {str(e)}")
+
+    # Commit all changes
+    try:
+        db.commit()
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Error saving recipes: {str(e)}",
+        )
+
+    return {
+        "created": created_count,
+        "errors": error_count,
+        "error_messages": errors if errors else [],
+        "total": created_count + error_count,
+    }
+
+
 @router.put("/plans/{plan_id}/recipes/{recipe_id}", response_model=schemas.Recipe)
 async def update_recipe(
     plan_id: int,

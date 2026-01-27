@@ -145,14 +145,6 @@ export default function PlannerGrid({
   }, [weekKey]);
 
   /**
-   * Reset batch selection when navigating to a different week
-   */
-  useEffect(() => {
-    setSelectedBatchId(null);
-    setBatches([]);
-  }, [currentWeekStart]);
-
-  /**
    * Synchronize meal batches with current week's plan
    * - Adds new recipes that are allocated in the week
    * - Removes recipes that are no longer in the plan
@@ -209,11 +201,6 @@ export default function PlannerGrid({
       });
 
       return newBatches;
-    });
-
-    // Clean up removed recipe IDs that are no longer in the plan
-    setRemovedRecipeIds((prev) => {
-      return prev.filter((id) => recipeIdsInWeek.includes(id));
     });
   }, [plan, recipes, currentWeekStart, removedRecipeIds]);
 
