@@ -50,13 +50,17 @@ async def update_meal_plan_name(
 
 @router.post("/plans", response_model=schemas.MealPlan)
 async def create_meal_plan(
-    plan_data: Dict,  # {"name": "My Plan"}
+    plan_data: Dict,  # {"name": "My Plan", "seed_test_recipes": bool}
     decoded_token: Dict = Depends(auth.verify_token),
     db: Session = Depends(get_db),
 ) -> schemas.MealPlan:
     """Create a new meal plan for the user.
 
     The user becomes the owner of the plan.
+
+    Request body:
+    - name: Required, name of the plan
+    - seed_test_recipes: Optional, whether to seed test recipes (default: False)
     """
     user = auth.get_user(decoded_token, db)
 
@@ -94,15 +98,14 @@ async def create_meal_plan(
     db.commit()
     db.refresh(meal_plan)
 
-    # Auto-seed recipes if using SQLite and no recipes exist for this plan
-    from database import DB_TYPE
+    # Always seed placeholder recipes for new plans
+    from routes_recipes import _seed_placeholder_recipes_for_plan
+    _seed_placeholder_recipes_for_plan(meal_plan.id, db)
 
-    if DB_TYPE == "sqlite":
+    # Seed test recipes if requested
+    if plan_data.get("seed_test_recipes", False):
         from routes_recipes import _seed_recipes_for_plan
-
-        recipe_count = db.query(models.RecipeDB).filter(models.RecipeDB.meal_plan_id == meal_plan.id).count()
-        if recipe_count == 0:
-            _seed_recipes_for_plan(meal_plan.id, db)
+        _seed_recipes_for_plan(meal_plan.id, db)
 
     return meal_plan
 

@@ -42,6 +42,43 @@ TEST_RECIPES = [
 ]
 
 
+def _seed_placeholder_recipes_for_plan(meal_plan_id: int, db: Session) -> None:
+    """Seed only placeholder recipes for a meal plan."""
+    for recipe_data in PLACEHOLDER_RECIPES:
+        exists = (
+            db.query(models.RecipeDB)
+            .filter(
+                models.RecipeDB.meal_plan_id == meal_plan_id,
+                models.RecipeDB.name == recipe_data["name"],
+            )
+            .first()
+        )
+
+        if not exists:
+            # Parse and create tags
+            tag_names = [t.strip().lower() for t in recipe_data["tags"].split(",")]
+            tags = []
+            for tag_name in tag_names:
+                tag = db.query(models.Tag).filter(func.lower(models.Tag.name) == tag_name).first()
+                if not tag:
+                    tag = models.Tag(name=tag_name)
+                    db.add(tag)
+                    db.flush()
+                tags.append(tag)
+
+            db.add(
+                models.RecipeDB(
+                    meal_plan_id=meal_plan_id,
+                    name=recipe_data["name"],
+                    default_portions=1,
+                    is_placeholder=True,
+                    tags=tags,
+                )
+            )
+
+    db.commit()
+
+
 def _seed_recipes_for_plan(meal_plan_id: int, db: Session) -> None:
     """Seed placeholder and test recipes for a meal plan."""
     for recipe_data in PLACEHOLDER_RECIPES + TEST_RECIPES:

@@ -17,6 +17,7 @@ function PlanSelector({
 }) {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [newPlanName, setNewPlanName] = useState('');
+  const [seedTestRecipes, setSeedTestRecipes] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
@@ -33,8 +34,12 @@ function PlanSelector({
 
     setLoading(true);
     try {
-      await axios.post(`${apiUrl}/plans`, { name: newPlanName });
+      await axios.post(`${apiUrl}/plans`, {
+        name: newPlanName,
+        seed_test_recipes: seedTestRecipes,
+      });
       setNewPlanName('');
+      setSeedTestRecipes(false);
       setShowCreateModal(false);
       setError(null);
       await onRefreshPlans();
@@ -161,6 +166,19 @@ function PlanSelector({
               onChange={(e) => setNewPlanName(e.target.value)}
               className="w-full border border-gray-300 rounded px-3 py-2 mb-4"
             />
+            <div className="mb-4">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={seedTestRecipes}
+                  onChange={(e) => setSeedTestRecipes(e.target.checked)}
+                  className="w-4 h-4"
+                />
+                <span className="text-sm text-gray-700">
+                  Lägg till testrecept
+                </span>
+              </label>
+            </div>
             <div className="flex gap-2">
               <button
                 onClick={handleCreatePlan}
@@ -173,6 +191,7 @@ function PlanSelector({
                 onClick={() => {
                   setShowCreateModal(false);
                   setNewPlanName('');
+                  setSeedTestRecipes(false);
                 }}
                 className="flex-1 bg-gray-400 hover:bg-gray-500 text-white px-4 py-2 rounded font-medium"
               >
