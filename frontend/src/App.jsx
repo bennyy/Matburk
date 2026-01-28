@@ -33,7 +33,11 @@ function App() {
 
   // Plan management
   const [mealPlans, setMealPlans] = useState([]);
-  const [selectedPlanId, setSelectedPlanId] = useState(null);
+  const [selectedPlanId, setSelectedPlanId] = useState(() => {
+    // Load saved plan from localStorage on mount
+    const saved = localStorage.getItem('selectedPlanId');
+    return saved ? parseInt(saved, 10) : null;
+  });
   const [showPlanSettings, setShowPlanSettings] = useState(false);
 
   // Recipe and meal data
@@ -100,6 +104,13 @@ function App() {
           console.error('Retry också misslyckades:', retryError);
         }
       }
+    }
+  }, [selectedPlanId]);
+
+  // Save selected plan to localStorage whenever it changes
+  useEffect(() => {
+    if (selectedPlanId !== null) {
+      localStorage.setItem('selectedPlanId', selectedPlanId.toString());
     }
   }, [selectedPlanId]);
 
@@ -252,12 +263,13 @@ function App() {
     }
   }, [selectedPlanId]);
 
-  // Fetch data when selected plan or week changes
+  // Fetch data when selected plan or week changes (only if user is authenticated)
   useEffect(() => {
+    if (!user || !authReady) return;
     fetchRecipes();
     fetchPlanSlots();
     fetchSettings();
-  }, [fetchRecipes, fetchPlanSlots, fetchSettings]);
+  }, [fetchRecipes, fetchPlanSlots, fetchSettings, user, authReady]);
 
   // Plan handlers
   const handleSelectPlan = (planId) => {
