@@ -8,13 +8,6 @@ from pydantic import BaseModel
 
 
 # Enums (must match models.py)
-class MealType(str, Enum):
-    """Enum for meal types."""
-
-    LUNCH = "LUNCH"
-    DINNER = "DINNER"
-
-
 class Person(str, Enum):
     """Enum for person identifiers."""
 
@@ -35,6 +28,17 @@ class Tag(BaseModel):
 
     id: int
     name: str
+
+    class Config:
+        from_attributes = True
+
+
+class MealType(BaseModel):
+    """Meal type schema."""
+
+    id: int
+    name: str
+    is_standard: bool
 
     class Config:
         from_attributes = True
@@ -97,7 +101,8 @@ class PlanSlot(BaseModel):
 
     id: int
     plan_date: date
-    meal_type: MealType
+    meal_type_id: int
+    extra_id: Optional[str] = None
     person: Person
     recipe_id: Optional[int] = None
     created_at: datetime
@@ -111,7 +116,8 @@ class PlanSlotUpdate(BaseModel):
     """Schema for updating meal plan slots."""
 
     plan_date: date
-    meal_type: MealType
+    meal_type_id: int
+    extra_id: Optional[str] = None
     person: Person
     recipe_id: Optional[int] = None
 

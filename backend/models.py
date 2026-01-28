@@ -20,14 +20,20 @@ from sqlalchemy.orm import relationship, Mapped, mapped_column
 from database import Base
 
 
+class MealTypeModel(Base):
+    """Meal type (standard or extra) available for meal planning."""
+
+    __tablename__ = "meal_types"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    name: Mapped[str] = mapped_column(String, unique=True, nullable=False, index=True)
+    is_standard: Mapped[bool] = mapped_column(Boolean, default=False)
+
+    # Relationships
+    plan_slots: Mapped[List["PlanSlotDB"]] = relationship("PlanSlotDB", back_populates="meal_type")
+
+
 # Enums
-class MealType(str, Enum):
-    """Enum for meal types."""
-
-    LUNCH = "LUNCH"
-    DINNER = "DINNER"
-
-
 class Person(str, Enum):
     """Enum for person identifiers."""
 
@@ -231,7 +237,13 @@ class PlanSlotDB(Base):
         index=True,
     )
     plan_date: Mapped[date] = mapped_column(Date, index=True, nullable=False)
-    meal_type: Mapped[MealType] = mapped_column(SQLEnum(MealType), nullable=False)
+    meal_type_id: Mapped[int] = mapped_column(
+        Integer,
+        ForeignKey("meal_types.id", ondelete="RESTRICT"),
+        nullable=False,
+        index=True,
+    )
+    extra_id: Mapped[Optional[str]] = mapped_column(String, nullable=True, index=True)
     person: Mapped[Person] = mapped_column(SQLEnum(Person), nullable=False)
     recipe_id: Mapped[Optional[int]] = mapped_column(
         Integer, ForeignKey("recipes.id", ondelete="SET NULL"), nullable=True
@@ -248,7 +260,8 @@ class PlanSlotDB(Base):
         UniqueConstraint(
             "meal_plan_id",
             "plan_date",
-            "meal_type",
+            "meal_type_id",
+            "extra_id",
             "person",
             name="uq_plan_slot_per_plan",
         ),
@@ -256,6 +269,7 @@ class PlanSlotDB(Base):
 
     # Relationships
     meal_plan: Mapped[MealPlan] = relationship("MealPlan", back_populates="plan_slots")
+    meal_type: Mapped["MealTypeModel"] = relationship("MealTypeModel", back_populates="plan_slots")
     recipe: Mapped[Optional["RecipeDB"]] = relationship("RecipeDB")
 
 

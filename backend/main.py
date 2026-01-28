@@ -5,7 +5,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 import models
-from database import engine
+from database import engine, SessionLocal
 from routes_auth import router as auth_router
 from routes_plans import router as plans_router
 from routes_recipes import router as recipes_router
@@ -15,6 +15,21 @@ ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS", "*").split(",")
 
 # Create database tables
 models.Base.metadata.create_all(bind=engine)
+
+
+# Initialize standard meal types
+def _initialize_meal_types():
+    """Initialize standard meal types on app startup."""
+    from routes_recipes import _initialize_meal_types_for_plan
+
+    db = SessionLocal()
+    try:
+        _initialize_meal_types_for_plan(db)
+    finally:
+        db.close()
+
+
+_initialize_meal_types()
 
 app = FastAPI(title="Matplanerare API", description="Recipe planner API")
 

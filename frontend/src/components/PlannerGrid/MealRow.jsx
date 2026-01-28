@@ -30,14 +30,14 @@ export default function MealRow({
             strokeLinejoin="round"
             strokeWidth={2}
             d={
-              meal === 'LUNCH'
+              meal.name === 'LUNCH'
                 ? 'M12 6v6m0 0v6m0-6h6m-6 0H6'
                 : 'M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z'
             }
           />
         </svg>
         <span className="text-[9px] md:text-[10px] font-bold text-gray-500 uppercase tracking-wide">
-          {meal}
+          {meal.name}
         </span>
       </div>
 
@@ -48,7 +48,7 @@ export default function MealRow({
           const slot = plan.find(
             (p) =>
               p.plan_date === dateStr &&
-              p.meal_type === meal &&
+              p.meal_type_id === meal.id &&
               p.person === personKey
           );
           const recipe = slot

@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { format, addDays, isSameDay } from 'date-fns';
+import axios from 'axios';
 // eslint-disable-next-line no-unused-vars
 import { sv } from 'date-fns/locale';
 
@@ -40,7 +41,6 @@ export default function PlannerGrid({
   setMealPlanner,
 }) {
   // ========== CONSTANTS ==========
-  const MEALS = ['LUNCH', 'DINNER'];
   const PEOPLE_KEYS = ['A', 'B'];
   const VIEW_MODES = {
     MINIMAL: 'minimal',
@@ -60,6 +60,8 @@ export default function PlannerGrid({
   const [viewingRecipe, setViewingRecipe] = useState(null);
   const [editingRecipe, setEditingRecipe] = useState(null);
   const [viewMode, setViewMode] = useState(VIEW_MODES.COMPACT);
+  const [meals, setMeals] = useState([]);
+  const [extraPresets, setExtraPresets] = useState([]);
 
   // Per-week lock state - stored with week as key
   const weekKey = format(currentWeekStart, 'yyyy-MM-dd');
@@ -70,6 +72,16 @@ export default function PlannerGrid({
       return stored === null ? true : stored === 'true';
     }
     return false;
+  });
+
+  // Extras management - per day extras
+  const [dayExtras, setDayExtras] = useState(() => {
+    if (typeof window !== 'undefined') {
+      // eslint-disable-next-line no-undef
+      const stored = localStorage.getItem(`dayExtras_${weekKey}`);
+      return stored ? JSON.parse(stored) : {};
+    }
+    return {};
   });
 
   // ========== COMPUTED VALUES ==========
@@ -125,12 +137,45 @@ export default function PlannerGrid({
 
   // ========== EFFECTS ==========
   /**
-   * Reset batch selection when navigating to a different week
+   * Fetch meal types from backend
+   */
+  useEffect(() => {
+    const fetchMealTypes = async () => {
+      try {
+        const response = await axios.get(
+          `${apiUrl}/plans/${planId}/meal-types`
+        );
+        if (response.data) {
+          setMeals(response.data);
+        }
+      } catch (error) {
+        console.error('Failed to fetch meal types:', error);
+        // Fallback to defaults
+        setMeals([
+          { id: 1, name: 'LUNCH', is_standard: true },
+          { id: 2, name: 'DINNER', is_standard: true },
+        ]);
+      }
+    };
+
+    if (planId && apiUrl) {
+      fetchMealTypes();
+    }
+  }, [planId, apiUrl]);
+
+  /**
+   * Reset extras for new week - check localStorage for saved extras
    */
   useEffect(() => {
     setSelectedBatchId(null);
     setBatches([]);
-  }, [currentWeekStart]);
+    // Reset extras for new week - check localStorage for saved extras
+    if (typeof window !== 'undefined') {
+      // eslint-disable-next-line no-undef
+      const stored = localStorage.getItem(`dayExtras_${weekKey}`);
+      setDayExtras(stored ? JSON.parse(stored) : {});
+    }
+  }, [currentWeekStart, weekKey]);
 
   /**
    * Sync lock state when week changes
@@ -143,6 +188,16 @@ export default function PlannerGrid({
       setIsWeekLocked(locked);
     }
   }, [weekKey]);
+
+  /**
+   * Persist extras to localStorage whenever they change
+   */
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      // eslint-disable-next-line no-undef
+      localStorage.setItem(`dayExtras_${weekKey}`, JSON.stringify(dayExtras));
+    }
+  }, [dayExtras, weekKey]);
 
   /**
    * Synchronize meal batches with current week's plan
@@ -290,9 +345,18 @@ export default function PlannerGrid({
       if (isWeekLocked) return; // Don't update if week is locked
 
       const dateStr = format(date, 'yyyy-MM-dd');
+
+      // Handle both regular meals (objects with id, name) and extras (objects with meal_type_id)
+      const isExtra = meal.meal_type_id !== undefined;
+      const mealTypeId = isExtra ? meal.meal_type_id : meal.id;
+      const extraId = isExtra ? meal.id : null; // Only set for extras
+
       const existingSlot = plan.find(
         (p) =>
-          p.plan_date === dateStr && p.meal_type === meal && p.person === person
+          p.plan_date === dateStr &&
+          p.meal_type_id === mealTypeId &&
+          p.extra_id === extraId &&
+          p.person === person
       );
 
       // If a batch is selected, toggle its presence in this slot
@@ -300,20 +364,24 @@ export default function PlannerGrid({
         const isAlreadyAllocated =
           existingSlot && existingSlot.recipe_id === selectedBatchId;
 
-        onUpdateSlot({
+        const updatePayload = {
           plan_date: dateStr,
-          meal_type: meal,
+          meal_type_id: mealTypeId,
+          extra_id: extraId,
           person: person,
           recipe_id: isAlreadyAllocated ? null : selectedBatchId,
-        });
+        };
+        onUpdateSlot(updatePayload);
       } else {
         // If no batch selected, clear the slot
-        onUpdateSlot({
+        const updatePayload = {
           plan_date: dateStr,
-          meal_type: meal,
+          meal_type_id: mealTypeId,
+          extra_id: extraId,
           person: person,
           recipe_id: null,
-        });
+        };
+        onUpdateSlot(updatePayload);
       }
     },
     [selectedBatchId, plan, onUpdateSlot, isWeekLocked]
@@ -337,6 +405,90 @@ export default function PlannerGrid({
   const getAllocatedCount = useCallback(
     (recipeId) => plan.filter((p) => p.recipe_id === recipeId).length,
     [plan]
+  );
+
+  /**
+   * Add a new extra meal to a day
+   */
+  const handleAddExtra = useCallback(
+    (date, presetName) => {
+      const dateStr = format(date, 'yyyy-MM-dd');
+      const dayExtrasArray = dayExtras[dateStr] || [];
+
+      // Find the meal type in the meals list that matches this preset
+      let mealTypeId = null;
+      const mealType = meals.find(
+        (m) => !m.is_standard && m.name === presetName
+      );
+
+      if (mealType) {
+        mealTypeId = mealType.id;
+      } else {
+        // Fallback: create a temporary meal type or find by alternate matching
+        // Try to find ANY non-standard meal type as fallback (shouldn't happen)
+        const anyExtra = meals.find((m) => !m.is_standard);
+        if (anyExtra) {
+          mealTypeId = anyExtra.id;
+        }
+      }
+
+      if (!mealTypeId) {
+        return;
+      }
+
+      // Count existing extras with same meal type on this day
+      const countSameType = dayExtrasArray.filter(
+        (e) => e.meal_type_id === mealTypeId
+      ).length;
+
+      // Generate a unique local ID for UI display: "snack_1", "mellanmål_2", etc.
+      const localExtraId = `${presetName.toLowerCase()}_${countSameType + 1}`;
+
+      const newExtra = {
+        id: localExtraId,
+        meal_type_id: mealTypeId, // Store the actual database ID
+        preset_name: presetName,
+        name: presetName,
+      };
+
+      setDayExtras((prev) => ({
+        ...prev,
+        [dateStr]: [...dayExtrasArray, newExtra],
+      }));
+    },
+    [dayExtras, meals]
+  );
+
+  /**
+   * Remove an extra meal from a day
+   * Clears all slots for that extra
+   */
+  const handleRemoveExtra = useCallback(
+    (date, extraId) => {
+      const dateStr = format(date, 'yyyy-MM-dd');
+
+      // Clear all plan slots with this specific extra
+      plan.forEach((slot) => {
+        if (slot.plan_date === dateStr && slot.extra_id === extraId) {
+          onUpdateSlot({
+            plan_date: slot.plan_date,
+            meal_type_id: slot.meal_type_id,
+            extra_id: slot.extra_id,
+            person: slot.person,
+            recipe_id: null,
+          });
+        }
+      });
+
+      // Remove the extra from state
+      setDayExtras((prev) => ({
+        ...prev,
+        [dateStr]: (prev[dateStr] || []).filter(
+          (extra) => extra.id !== extraId
+        ),
+      }));
+    },
+    [plan, onUpdateSlot]
   );
 
   // ========== RENDER ==========
@@ -1136,15 +1288,18 @@ export default function PlannerGrid({
 
           {/* Calendar Grid */}
           <div className="flex-1 overflow-y-auto overflow-x-auto p-2 md:p-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2 pb-20">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2 pb-20 items-start">
               {days.map((day) => {
                 const isToday = isSameDay(day, new Date());
+                const dateStr = format(day, 'yyyy-MM-dd');
+                const dayExtrasList = dayExtras[dateStr] || [];
+
                 return (
                   <DayColumn
                     key={day.toString()}
                     day={day}
                     isToday={isToday}
-                    meals={MEALS}
+                    meals={meals}
                     peopleKeys={PEOPLE_KEYS}
                     peopleNames={peopleNames}
                     plan={plan}
@@ -1152,6 +1307,11 @@ export default function PlannerGrid({
                     selectedBatchId={selectedBatchId}
                     onSlotClick={handleSlotClick}
                     isPlannerLocked={isWeekLocked}
+                    extras={dayExtrasList}
+                    onAddExtra={handleAddExtra}
+                    onRemoveExtra={(extraId) => handleRemoveExtra(day, extraId)}
+                    planId={planId}
+                    apiUrl={apiUrl}
                   />
                 );
               })}

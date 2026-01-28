@@ -98,13 +98,20 @@ async def create_meal_plan(
     db.commit()
     db.refresh(meal_plan)
 
+    # Initialize meal types (global, not per-plan)
+    from routes_recipes import _initialize_meal_types_for_plan
+
+    _initialize_meal_types_for_plan(db)
+
     # Always seed placeholder recipes for new plans
     from routes_recipes import _seed_placeholder_recipes_for_plan
+
     _seed_placeholder_recipes_for_plan(meal_plan.id, db)
 
     # Seed test recipes if requested
     if plan_data.get("seed_test_recipes", False):
         from routes_recipes import _seed_recipes_for_plan
+
         _seed_recipes_for_plan(meal_plan.id, db)
 
     return meal_plan

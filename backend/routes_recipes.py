@@ -19,6 +19,19 @@ DEFAULT_PORTIONS = 4
 DEFAULT_PERSON_A = "Person A"
 DEFAULT_PERSON_B = "Person B"
 
+# ============================================================================
+# MEAL TYPES CONFIGURATION
+# Standard meals (LUNCH, DINNER) are created during initialization.
+# Extra presets (Snack, Mellanmål, etc.) are optional meal types users can add.
+# ============================================================================
+STANDARD_MEAL_TYPES = ["LUNCH", "DINNER"]
+EXTRA_MEAL_TYPES = [
+    {"id": "snack", "name": "Snack"},
+    {"id": "mellanmål", "name": "Mellanmål"},
+    {"id": "tillbehör", "name": "Tillbehör"},
+    {"id": "övrigt", "name": "Övrigt"},
+]
+
 # Placeholder recipes configuration
 PLACEHOLDER_RECIPES = [
     {"name": "🥡 Takeaway", "tags": "Snabbval"},
@@ -40,6 +53,32 @@ TEST_RECIPES = [
     {"name": "Pannkakor", "tags": "Sött, Frukost"},
     {"name": "Sushi Bowl", "tags": "Japanskt, Hälsosamt"},
 ]
+
+
+def _get_meal_types(meal_plan_id: int, db: Session):
+    """Get meal types (standard and extra) for a plan."""
+    meal_types = db.query(models.MealTypeModel).all()
+    return meal_types
+
+
+def _get_or_create_meal_type(name: str, is_standard: bool, db: Session) -> models.MealTypeModel:
+    """Get or create a meal type."""
+    meal_type = db.query(models.MealTypeModel).filter(models.MealTypeModel.name == name).first()
+    if not meal_type:
+        meal_type = models.MealTypeModel(name=name, is_standard=is_standard)
+        db.add(meal_type)
+        db.commit()
+        db.refresh(meal_type)
+    return meal_type
+
+
+def _initialize_meal_types_for_plan(db: Session) -> None:
+    """Initialize standard meal types in database (global, not per-plan)."""
+    for meal_type_name in STANDARD_MEAL_TYPES:
+        _get_or_create_meal_type(meal_type_name, is_standard=True, db=db)
+
+    for meal_type_data in EXTRA_MEAL_TYPES:
+        _get_or_create_meal_type(meal_type_data["name"], is_standard=False, db=db)
 
 
 def _seed_placeholder_recipes_for_plan(meal_plan_id: int, db: Session) -> None:
@@ -144,7 +183,10 @@ def get_recipes(
             detail="You do not have access to this meal plan",
         )
 
-    # Calculate meal count for recipes in this plan
+    # Calculate meal count for recipes in this plan (count only standard meals, not extras)
+    standard_meal_types = db.query(models.MealTypeModel).filter(models.MealTypeModel.is_standard).all()
+    standard_meal_type_ids = [mt.id for mt in standard_meal_types]
+
     meal_count_subquery = (
         db.query(
             models.PlanSlotDB.recipe_id,
@@ -152,7 +194,7 @@ def get_recipes(
         )
         .filter(
             models.PlanSlotDB.meal_plan_id == plan_id,
-            models.PlanSlotDB.meal_type.in_([models.MealType.LUNCH, models.MealType.DINNER]),
+            models.PlanSlotDB.meal_type_id.in_(standard_meal_type_ids),
         )
         .group_by(models.PlanSlotDB.recipe_id)
         .subquery()
@@ -564,7 +606,7 @@ def _update_recipe_last_cooked(recipe_id: int, meal_plan_id: int, db: Session) -
         db.add(recipe)
 
 
-@router.get("/plans/{plan_id}/plan")
+@router.get("/plans/{plan_id}/plan", response_model=List[schemas.PlanSlot])
 def get_plan(
     plan_id: int,
     start_date: date,
@@ -592,7 +634,7 @@ def get_plan(
             models.PlanSlotDB.plan_date <= end_date,
         )
         .all()
-    )
+    )  # type: ignore
 
 
 @router.post("/plans/{plan_id}/plan", response_model=schemas.PlanSlot)
@@ -619,7 +661,8 @@ def update_plan_slot(
         .filter(
             models.PlanSlotDB.meal_plan_id == plan_id,
             models.PlanSlotDB.plan_date == slot.plan_date,
-            models.PlanSlotDB.meal_type == slot.meal_type,
+            models.PlanSlotDB.meal_type_id == slot.meal_type_id,
+            models.PlanSlotDB.extra_id == slot.extra_id,
             models.PlanSlotDB.person == slot.person,
         )
         .first()
@@ -629,7 +672,8 @@ def update_plan_slot(
         db_slot = models.PlanSlotDB(
             meal_plan_id=plan_id,
             plan_date=slot.plan_date,
-            meal_type=slot.meal_type,
+            meal_type_id=slot.meal_type_id,
+            extra_id=slot.extra_id,
             person=slot.person,
         )
         db.add(db_slot)
@@ -684,6 +728,44 @@ def _update_setting(meal_plan_id: int, key: str, value: str, db: Session) -> Non
         db.add(setting)
 
     setting.value = value
+
+
+@router.get("/plans/{plan_id}/meal-types", response_model=List[schemas.MealType])
+def get_meal_types(
+    plan_id: int,
+    decoded_token: Dict = Depends(auth.verify_token),
+    db: Session = Depends(get_db),
+):
+    """Get meal types available for meal planning."""
+    user = auth.get_user(decoded_token, db)
+
+    if not utils.can_view_plan(user.id, plan_id, db):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You do not have access to this meal plan",
+        )
+
+    return _get_meal_types(plan_id, db)
+
+
+@router.post("/plans/{plan_id}/meal-types")
+def add_meal_type(
+    plan_id: int,
+    name: str,
+    decoded_token: Dict = Depends(auth.verify_token),
+    db: Session = Depends(get_db),
+) -> Dict[str, schemas.MealType]:
+    """Add an extra meal type for a meal plan."""
+    user = auth.get_user(decoded_token, db)
+
+    if not utils.can_edit_plan(user.id, plan_id, db):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You do not have permission to edit this meal plan",
+        )
+
+    meal_type = _get_or_create_meal_type(name, is_standard=False, db=db)
+    return {"meal_type": meal_type}
 
 
 @router.get("/plans/{plan_id}/settings", response_model=schemas.MealPlanSettings)
