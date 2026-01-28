@@ -12,38 +12,11 @@ import schemas
 import utils
 from database import get_db
 
-router = APIRouter(prefix="/api", tags=["auth_and_plans"])
+router = APIRouter(prefix="/api", tags=["plans"])
 
 # Default settings
 DEFAULT_PERSON_A = "Person A"
 DEFAULT_PERSON_B = "Person B"
-
-
-# ============================================================================
-# AUTH & USER ENDPOINTS
-# ============================================================================
-
-
-@router.post("/auth/register", response_model=schemas.User)
-async def register_user(
-    decoded_token: Dict = Depends(auth.verify_token),
-    db: Session = Depends(get_db),
-) -> schemas.User:
-    """Register or fetch user from Firebase token.
-
-    This endpoint automatically creates a User record if it doesn't exist.
-    """
-    user = auth.ensure_user_exists(decoded_token, db)
-    return user
-
-
-# ============================================================================
-# MEAL PLAN ENDPOINTS
-# ============================================================================
-
-# ==========================================================================
-# MEAL PLAN NAME UPDATE ENDPOINT
-# ==========================================================================
 
 
 class MealPlanNameUpdate(BaseModel):
@@ -58,7 +31,7 @@ async def update_meal_plan_name(
     db: Session = Depends(get_db),
 ) -> Dict[str, str]:
     """Update the name of a meal plan (owner or editor only)."""
-    user = auth.ensure_user_exists(decoded_token, db)
+    user = auth.get_user(decoded_token, db)
     if not utils.can_edit_plan(user.id, plan_id, db):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
@@ -85,7 +58,7 @@ async def create_meal_plan(
 
     The user becomes the owner of the plan.
     """
-    user = auth.ensure_user_exists(decoded_token, db)
+    user = auth.get_user(decoded_token, db)
 
     if not isinstance(plan_data, dict) or "name" not in plan_data:
         raise HTTPException(
@@ -140,7 +113,7 @@ async def list_user_meal_plans(
     db: Session = Depends(get_db),
 ) -> List[schemas.MealPlanWithAccess]:
     """List all meal plans the user has access to."""
-    user = auth.ensure_user_exists(decoded_token, db)
+    user = auth.get_user(decoded_token, db)
 
     accesses = (
         db.query(models.UserMealPlanAccess, models.MealPlan)
@@ -175,7 +148,7 @@ async def get_meal_plan(
     db: Session = Depends(get_db),
 ) -> schemas.MealPlanWithAccess:
     """Get a specific meal plan (must have access)."""
-    user = auth.ensure_user_exists(decoded_token, db)
+    user = auth.get_user(decoded_token, db)
 
     # Check if user has access
     permission = utils.get_user_permission_for_plan(user.id, plan_id, db)
@@ -214,7 +187,7 @@ async def list_plan_users(
     db: Session = Depends(get_db),
 ) -> List[schemas.UserInPlan]:
     """List users who have access to a specific meal plan, with their permissions."""
-    user = auth.ensure_user_exists(decoded_token, db)
+    user = auth.get_user(decoded_token, db)
 
     # Ensure requester has at least view access
     if not utils.can_view_plan(user.id, plan_id, db):
@@ -255,7 +228,7 @@ async def join_meal_plan(
     db: Session = Depends(get_db),
 ) -> Dict[str, str]:
     """Join a meal plan using a share code or one-time invite token."""
-    user = auth.ensure_user_exists(decoded_token, db)
+    user = auth.get_user(decoded_token, db)
 
     share = db.query(models.MealPlanShare).filter(models.MealPlanShare.share_code == share_code).first()
 
@@ -319,7 +292,7 @@ async def list_share_codes(
 
     Only owner or editors can view share codes.
     """
-    user = auth.ensure_user_exists(decoded_token, db)
+    user = auth.get_user(decoded_token, db)
 
     if not utils.can_edit_plan(user.id, plan_id, db):
         raise HTTPException(
@@ -346,7 +319,7 @@ async def create_one_time_invite(
 
     Requires edit permission on the plan. Returns a token to be embedded in a URL.
     """
-    user = auth.ensure_user_exists(decoded_token, db)
+    user = auth.get_user(decoded_token, db)
 
     if not utils.can_edit_plan(user.id, plan_id, db):
         raise HTTPException(
@@ -406,7 +379,7 @@ def delete_share_code(
 
     Only owner or editors can delete share codes.
     """
-    user = auth.ensure_user_exists(decoded_token, db)
+    user = auth.get_user(decoded_token, db)
 
     if not utils.can_edit_plan(user.id, plan_id, db):
         raise HTTPException(
@@ -444,7 +417,7 @@ def leave_meal_plan(
 
     If the user does not have access, returns 404.
     """
-    user = auth.ensure_user_exists(decoded_token, db)
+    user = auth.get_user(decoded_token, db)
 
     access = (
         db.query(models.UserMealPlanAccess)

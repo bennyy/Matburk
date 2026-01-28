@@ -1,20 +1,28 @@
 """Authentication endpoints for Matplanerare API."""
 
+from typing import Dict
 from fastapi import APIRouter, Depends
+from sqlalchemy.orm import Session
+
+import auth
+import schemas
 from auth import verify_token
+from database import get_db
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 
 
-@router.post("/register")
-def register_user(user_info: dict = Depends(verify_token)):
-    """Endpoint to handle user registration after Firebase auth."""
-    # Here you can create the user in your database if needed
-    return {
-        "message": "User registered",
-        "uid": user_info["uid"],
-        "email": user_info["email"],
-    }
+@router.post("/register", response_model=schemas.User)
+async def register_user_endpoint(
+    decoded_token: Dict = Depends(verify_token),
+    db: Session = Depends(get_db),
+) -> schemas.User:
+    """Register or fetch user from Firebase token.
+
+    This endpoint automatically creates a User record if it doesn't exist.
+    """
+    user = auth.register_user(decoded_token, db)
+    return user
 
 
 @router.get("/me")

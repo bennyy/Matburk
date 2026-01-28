@@ -146,8 +146,57 @@ async def verify_token(
     return _verify_token(credentials_header.credentials)
 
 
-def ensure_user_exists(decoded_token: Dict[str, Any], db: Session) -> Any:
-    """Ensure a User record exists for the Firebase account.
+def get_user(decoded_token: Dict[str, Any], db: Session) -> Any:
+    """Get an existing User record from a Firebase token.
+
+    Args:
+        decoded_token: Decoded Firebase token with uid and email
+        db: Database session
+
+    Returns:
+        The User model instance
+
+    Raises:
+        HTTPException: If user not found or token is invalid
+    """
+    import models  # Avoid circular imports
+
+    firebase_uid = decoded_token.get("uid")
+    email = decoded_token.get("email")
+
+    if not firebase_uid or not email:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Token missing uid or email",
+        )
+
+    # Try find by firebase_uid first
+    user = db.query(models.User).filter(models.User.firebase_uid == firebase_uid).first()
+
+    # Fallback: find by email to handle emulator uid changes
+    if not user:
+        user = db.query(models.User).filter(models.User.email == email).first()
+        if user:
+            # Update firebase_uid to current token's uid
+            user.firebase_uid = firebase_uid
+            db.add(user)
+            db.commit()
+            db.refresh(user)
+
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found",
+        )
+
+    return user
+
+
+def register_user(decoded_token: Dict[str, Any], db: Session) -> Any:
+    """Register or fetch a User record from a Firebase token.
+
+    Creates a new User if one doesn't exist. If the user exists but the
+    firebase_uid differs, updates it.
 
     Args:
         decoded_token: Decoded Firebase token with uid and email

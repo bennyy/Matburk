@@ -98,7 +98,7 @@ def get_recipes(
 
     User must have access to the plan.
     """
-    user = auth.ensure_user_exists(decoded_token, db)
+    user = auth.get_user(decoded_token, db)
 
     # Check access
     if not utils.can_view_plan(user.id, plan_id, db):
@@ -187,7 +187,7 @@ async def create_recipe(
 
     User must have edit permission on the plan.
     """
-    user = auth.ensure_user_exists(decoded_token, db)
+    user = auth.get_user(decoded_token, db)
 
     # Check edit permission
     if not utils.can_edit_plan(user.id, plan_id, db):
@@ -255,7 +255,7 @@ async def bulk_import_recipes(
 
     Returns summary with created and error counts.
     """
-    user = auth.ensure_user_exists(decoded_token, db)
+    user = auth.get_user(decoded_token, db)
 
     # Check edit permission
     if not utils.can_edit_plan(user.id, plan_id, db):
@@ -377,7 +377,7 @@ async def update_recipe(
 
     User must have edit permission on the plan.
     """
-    user = auth.ensure_user_exists(decoded_token, db)
+    user = auth.get_user(decoded_token, db)
 
     # Check edit permission
     if not utils.can_edit_plan(user.id, plan_id, db):
@@ -436,7 +436,7 @@ def vote_recipe(
     db: Session = Depends(get_db),
 ) -> Dict[str, bool]:
     """Vote for a recipe in a meal plan."""
-    user = auth.ensure_user_exists(decoded_token, db)
+    user = auth.get_user(decoded_token, db)
 
     if not utils.can_view_plan(user.id, plan_id, db):
         raise HTTPException(
@@ -472,7 +472,7 @@ def delete_recipe(
     db: Session = Depends(get_db),
 ) -> Dict[str, bool]:
     """Delete a recipe in a meal plan."""
-    user = auth.ensure_user_exists(decoded_token, db)
+    user = auth.get_user(decoded_token, db)
 
     if not utils.can_edit_plan(user.id, plan_id, db):
         raise HTTPException(
@@ -539,7 +539,7 @@ def get_plan(
 
     User must have access to the plan.
     """
-    user = auth.ensure_user_exists(decoded_token, db)
+    user = auth.get_user(decoded_token, db)
 
     if not utils.can_view_plan(user.id, plan_id, db):
         raise HTTPException(
@@ -569,7 +569,7 @@ def update_plan_slot(
 
     User must have edit permission on the plan.
     """
-    user = auth.ensure_user_exists(decoded_token, db)
+    user = auth.get_user(decoded_token, db)
 
     if not utils.can_edit_plan(user.id, plan_id, db):
         raise HTTPException(
@@ -656,7 +656,7 @@ def get_settings(
     db: Session = Depends(get_db),
 ) -> schemas.MealPlanSettings:
     """Get settings for a meal plan."""
-    user = auth.ensure_user_exists(decoded_token, db)
+    user = auth.get_user(decoded_token, db)
 
     if not utils.can_view_plan(user.id, plan_id, db):
         raise HTTPException(
@@ -679,7 +679,7 @@ def update_settings(
     db: Session = Depends(get_db),
 ) -> Dict[str, bool]:
     """Update settings for a meal plan."""
-    user = auth.ensure_user_exists(decoded_token, db)
+    user = auth.get_user(decoded_token, db)
 
     if not utils.can_edit_plan(user.id, plan_id, db):
         raise HTTPException(
