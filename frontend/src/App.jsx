@@ -608,9 +608,9 @@ function App() {
   // Main app
   return (
     <div className="h-screen flex flex-col font-sans text-gray-800">
-      <header className="bg-white border-b border-gray-200 px-2 md:px-4 py-2 md:py-3 flex justify-between items-center shadow-sm z-10">
+      <header className="bg-gradient-to-r from-slate-50 to-blue-50 border-b border-slate-200 px-2 md:px-4 py-2 md:py-3 flex justify-between items-center shadow-sm z-10">
         <div className="flex items-center gap-2 md:gap-4 flex-1">
-          <h1 className="text-lg md:text-xl font-bold text-gray-900 truncate">
+          <h1 className="text-lg md:text-xl font-bold text-slate-900 truncate">
             {mealPlans.find((p) => p.id === selectedPlanId)?.name ||
               'Hemmets Matplanerare'}
           </h1>

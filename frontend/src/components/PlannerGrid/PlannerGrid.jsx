@@ -1027,7 +1027,7 @@ export default function PlannerGrid({
       {mealPlanner && (
         <div className="flex-1 flex flex-col overflow-hidden bg-slate-100">
           {/* Header - Week Navigation */}
-          <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-2 md:px-4 py-2 md:py-3 border-b flex justify-between items-center shadow-sm z-10">
+          <div className="bg-blue-600 px-2 md:px-4 py-2 md:py-3 border-b border-blue-700 flex justify-between items-center shadow-md z-10">
             <button
               onClick={onPrevWeek}
               className="p-1.5 md:p-2 hover:bg-white/20 rounded-lg text-white font-semibold flex items-center gap-1 transition-all"
