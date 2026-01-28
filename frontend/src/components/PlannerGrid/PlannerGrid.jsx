@@ -766,30 +766,18 @@ export default function PlannerGrid({
                   {sortOrder === 'asc' ? (
                     <svg
                       className="w-4 h-4 md:w-5 md:h-5"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
+                      fill="currentColor"
+                      viewBox="0 0 20 20"
                     >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M7 16V4m0 0L3 8m4-4l4 4"
-                      />
+                      <path d="M3 3a1 1 0 000 2h11a1 1 0 100-2H3zM3 7a1 1 0 000 2h5a1 1 0 000-2H3zM3 11a1 1 0 100 2h4a1 1 0 100-2H3zM15 8a1 1 0 10-2 0v5.586l-1.293-1.293a1 1 0 00-1.414 1.414l3 3a1 1 0 001.414 0l3-3a1 1 0 00-1.414-1.414L15 13.586V8z" />
                     </svg>
                   ) : (
                     <svg
                       className="w-4 h-4 md:w-5 md:h-5"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
+                      fill="currentColor"
+                      viewBox="0 0 20 20"
                     >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M17 8l4 4m0 0l-4 4m4-4H3"
-                      />
+                      <path d="M3 3a1 1 0 000 2h11a1 1 0 100-2H3zM3 7a1 1 0 000 2h7a1 1 0 100-2H3zM3 11a1 1 0 100 2h4a1 1 0 100-2H3zM15 12a1 1 0 10-2 0V6.414l-1.293 1.293a1 1 0 00-1.414-1.414l3-3a1 1 0 011.414 0l3 3a1 1 0 00-1.414 1.414L15 6.414V12z" />
                     </svg>
                   )}
                 </button>
