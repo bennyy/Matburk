@@ -13,7 +13,9 @@ export default function MealSlot({
     if (isLocked) {
       return isPlaceholder
         ? 'bg-gradient-to-br from-amber-50 to-amber-100 border-amber-300 text-amber-900 italic shadow-sm'
-        : 'bg-gradient-to-br from-green-50 to-green-100 border-green-300 text-gray-800 shadow-sm';
+        : recipe
+          ? 'bg-gradient-to-br from-green-50 to-green-100 border-green-300 text-gray-800 shadow-sm'
+          : 'bg-white border border-dashed border-gray-400 text-gray-400 shadow-sm';
     }
     if (isActive) {
       return 'bg-gradient-to-br from-blue-600 to-blue-700 text-white border-blue-500 ring-2 ring-blue-300 shadow-lg transform scale-105';
@@ -23,7 +25,7 @@ export default function MealSlot({
         ? 'bg-gradient-to-br from-amber-50 to-amber-100 border-amber-300 text-amber-900 hover:from-amber-100 hover:to-amber-200 hover:shadow-md italic'
         : 'bg-gradient-to-br from-green-50 to-green-100 border-green-300 text-gray-800 hover:from-green-100 hover:to-green-200 hover:shadow-md';
     }
-    return 'bg-white border border-dashed border-gray-300 hover:bg-gray-50 hover:border-blue-400 text-gray-400';
+    return 'bg-white border-2 border-dashed border-gray-300 hover:bg-gray-50 hover:border-blue-400 text-gray-400';
   };
 
   return (
