@@ -868,114 +868,75 @@ export default function PlannerGrid({
 
         {/* Library Tab - Recipe Browser */}
         {activeTab === TABS.LIBRARY && (
-          <div className="flex-1 overflow-y-auto p-2 md:p-4 bg-gray-50 flex flex-col">
-            {/* Search Input */}
-            <div className="mb-2 md:mb-4">
+          <div className="flex-1 overflow-y-auto p-3 bg-gray-50 flex flex-col">
+            {/* Search Bar - Full width */}
+            <div className="mb-2 relative">
               <input
                 type="text"
-                placeholder="🔍 Sök recept..."
+                placeholder="Sök recept..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full p-3 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none focus:border-transparent bg-white shadow-sm hover:border-gray-400 transition-all"
+                className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none focus:border-transparent bg-white transition-all"
                 aria-label="Sök recept"
               />
+              <svg
+                className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                />
+              </svg>
             </div>
 
-            {/* Filter & View Controls - Responsive Layout */}
-            <div className="mb-3 md:mb-4 space-y-3 md:space-y-3">
-              {/* Top Row: Sort Controls + Tag Filter */}
-              <div className="flex gap-2">
-                {/* Sort By Dropdown - Full width on mobile, flex on tablet+ */}
-                <div className="relative flex-1">
-                  <select
-                    value={sortField}
-                    onChange={(e) => setSortField(e.target.value)}
-                    className="w-full appearance-none p-2 md:p-3 pl-2 md:pl-3 pr-7 md:pr-8 text-xs md:text-sm font-medium border border-gray-300 rounded-lg bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all cursor-pointer hover:border-gray-400"
-                    aria-label="Sorteringsfält"
-                  >
-                    <option value="total_meals">🥡 Mest använd</option>
-                    <option value="vote">❤️ Populär</option>
-                    <option value="last_cooked">📅 Senast</option>
-                    <option value="created">✨ Nytt</option>
-                    <option value="name">🔤 Namn</option>
-                  </select>
-                  <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-500">
-                    <svg className="fill-current h-4 w-4" viewBox="0 0 20 20">
-                      <path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z" />
-                    </svg>
-                  </div>
-                </div>
-
-                {/* Sort Direction Toggle */}
-                <button
-                  onClick={() =>
-                    setSortOrder((prev) => (prev === 'asc' ? 'desc' : 'asc'))
-                  }
-                  className="px-1.5 py-2 md:px-3 md:py-3 bg-white border border-gray-300 rounded-lg text-gray-600 hover:bg-blue-50 hover:border-blue-400 transition-all flex items-center justify-center font-semibold shadow-sm flex-shrink-0"
-                  title={`Sorteringsriktning: ${sortOrder === 'asc' ? 'stigande' : 'fallande'}`}
-                  aria-label={`Sorteringsriktning: ${sortOrder === 'asc' ? 'stigande' : 'fallande'}`}
+            {/* Controls Row - Sort, View Mode, Tags */}
+            <div className="mb-3 flex gap-2">
+              {/* Sort Dropdown - Takes more space */}
+              <div className="relative flex-1">
+                <select
+                  value={`${sortField}-${sortOrder}`}
+                  onChange={(e) => {
+                    const [field, order] = e.target.value.split('-');
+                    setSortField(field);
+                    setSortOrder(order);
+                  }}
+                  className="w-full appearance-none pl-3 pr-8 py-2 text-xs font-medium border border-gray-300 rounded-lg bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all cursor-pointer"
+                  aria-label="Sortera recept"
                 >
-                  {sortOrder === 'asc' ? (
-                    <svg
-                      className="w-4 h-4 md:w-5 md:h-5"
-                      fill="currentColor"
-                      viewBox="0 0 20 20"
-                    >
-                      <path d="M3 3a1 1 0 000 2h11a1 1 0 100-2H3zM3 7a1 1 0 000 2h5a1 1 0 000-2H3zM3 11a1 1 0 100 2h4a1 1 0 100-2H3zM15 8a1 1 0 10-2 0v5.586l-1.293-1.293a1 1 0 00-1.414 1.414l3 3a1 1 0 001.414 0l3-3a1 1 0 00-1.414-1.414L15 13.586V8z" />
-                    </svg>
-                  ) : (
-                    <svg
-                      className="w-4 h-4 md:w-5 md:h-5"
-                      fill="currentColor"
-                      viewBox="0 0 20 20"
-                    >
-                      <path d="M3 3a1 1 0 000 2h11a1 1 0 100-2H3zM3 7a1 1 0 000 2h7a1 1 0 100-2H3zM3 11a1 1 0 100 2h4a1 1 0 100-2H3zM15 12a1 1 0 10-2 0V6.414l-1.293 1.293a1 1 0 00-1.414-1.414l3-3a1 1 0 011.414 0l3 3a1 1 0 00-1.414 1.414L15 6.414V12z" />
-                    </svg>
-                  )}
-                </button>
-
-                {/* Tag Filter Button - Visible on all sizes */}
-                {allTags.length > 0 && (
-                  <button
-                    onClick={() => setShowTagFilter(!showTagFilter)}
-                    className={`flex px-1.5 md:px-3 py-2 md:py-3 rounded-lg text-xs md:text-sm font-semibold transition-all border items-center justify-center gap-1 flex-shrink-0 ${
-                      showTagFilter
-                        ? 'bg-gradient-to-r from-blue-600 to-blue-700 text-white border-blue-600 shadow-md'
-                        : 'bg-white text-gray-700 border-gray-300 hover:border-blue-400 hover:shadow-md'
-                    }`}
-                    aria-expanded={showTagFilter}
-                    title="Visa/dölj taggfilter"
-                  >
-                    <svg
-                      className="w-4 h-4"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01"
-                      />
-                    </svg>
-                    <span className="hidden lg:inline">Taggar</span>
-                  </button>
-                )}
+                  <option value="total_meals-desc">🥡 Mest använd</option>
+                  <option value="total_meals-asc">🥡 Minst använd</option>
+                  <option value="vote-desc">❤️ Populär</option>
+                  <option value="vote-asc">❤️ Opopulär</option>
+                  <option value="last_cooked-desc">📅 Senast</option>
+                  <option value="last_cooked-asc">📅 Längesen</option>
+                  <option value="created-desc">✨ Nytt</option>
+                  <option value="created-asc">✨ Gamla</option>
+                  <option value="name-asc">🔤 A-Ö</option>
+                  <option value="name-desc">🔤 Ö-A</option>
+                </select>
+                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-500">
+                  <svg className="fill-current h-3 w-3" viewBox="0 0 20 20">
+                    <path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z" />
+                  </svg>
+                </div>
               </div>
 
-              {/* View Mode Toggle - Below sort controls */}
-              <div className="flex bg-white border border-gray-300 p-1 rounded-lg shadow-sm">
+              {/* View Mode Toggle */}
+              <div className="flex bg-white border border-gray-300 rounded-lg overflow-hidden">
                 <button
                   onClick={() => setViewMode(VIEW_MODES.MINIMAL)}
-                  className={`flex-1 px-2 py-1.5 md:px-3 md:py-2 rounded transition-all font-semibold text-xs md:text-sm ${viewMode === VIEW_MODES.MINIMAL ? 'bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-md' : 'text-gray-500 hover:text-gray-700'}`}
+                  className={`px-2 py-2 transition-all ${viewMode === VIEW_MODES.MINIMAL ? 'bg-blue-600 text-white' : 'text-gray-500 hover:bg-gray-50'}`}
                   title="Minimal vy"
-                  aria-label="Växla till minimal vy"
+                  aria-label="Minimal vy"
                   aria-pressed={viewMode === VIEW_MODES.MINIMAL}
                 >
                   <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="h-4 w-4 md:h-5 md:w-5 inline"
+                    className="h-4 w-4"
                     fill="none"
                     viewBox="0 0 24 24"
                     stroke="currentColor"
@@ -987,18 +948,16 @@ export default function PlannerGrid({
                       d="M4 6h16M4 12h16M4 18h16"
                     />
                   </svg>
-                  <span className="hidden md:inline ml-1">Minimal</span>
                 </button>
                 <button
                   onClick={() => setViewMode(VIEW_MODES.COMPACT)}
-                  className={`flex-1 px-2 py-1.5 md:px-3 md:py-2 rounded transition-all font-semibold text-xs md:text-sm ${viewMode === VIEW_MODES.COMPACT ? 'bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-md' : 'text-gray-500 hover:text-gray-700'}`}
+                  className={`px-2 py-2 transition-all border-l border-gray-300 ${viewMode === VIEW_MODES.COMPACT ? 'bg-blue-600 text-white' : 'text-gray-500 hover:bg-gray-50'}`}
                   title="Kompakt vy"
-                  aria-label="Växla till kompakt vy"
+                  aria-label="Kompakt vy"
                   aria-pressed={viewMode === VIEW_MODES.COMPACT}
                 >
                   <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="h-4 w-4 md:h-5 md:w-5 inline"
+                    className="h-4 w-4"
                     fill="none"
                     viewBox="0 0 24 24"
                     stroke="currentColor"
@@ -1007,21 +966,19 @@ export default function PlannerGrid({
                     <path
                       strokeLinecap="round"
                       strokeLinejoin="round"
-                      d="M4 6h16M4 10h16M4 14h7M4 18h7"
+                      d="M4 6h16M4 10h16M4 14h16"
                     />
                   </svg>
-                  <span className="hidden md:inline ml-1">Kompakt</span>
                 </button>
                 <button
                   onClick={() => setViewMode(VIEW_MODES.DETAILED)}
-                  className={`flex-1 px-2 py-1.5 md:px-3 md:py-2 rounded transition-all font-semibold text-xs md:text-sm ${viewMode === VIEW_MODES.DETAILED ? 'bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-md' : 'text-gray-500 hover:text-gray-700'}`}
+                  className={`px-2 py-2 transition-all border-l border-gray-300 ${viewMode === VIEW_MODES.DETAILED ? 'bg-blue-600 text-white' : 'text-gray-500 hover:bg-gray-50'}`}
                   title="Detaljerad vy"
-                  aria-label="Växla till detaljerad vy"
+                  aria-label="Detaljerad vy"
                   aria-pressed={viewMode === VIEW_MODES.DETAILED}
                 >
                   <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="h-4 w-4 md:h-5 md:w-5 inline"
+                    className="h-4 w-4"
                     fill="none"
                     viewBox="0 0 24 24"
                     stroke="currentColor"
@@ -1030,18 +987,24 @@ export default function PlannerGrid({
                     <path
                       strokeLinecap="round"
                       strokeLinejoin="round"
-                      d="M4 6h16M4 10h16M4 14h7M4 18h7"
+                      d="M4 6h16M4 10h16M4 14h10M4 18h10"
                     />
                   </svg>
-                  <span className="hidden md:inline ml-1">Detalj</span>
                 </button>
               </div>
-            </div>
 
-            {/* Tag Filter - Mobile friendly */}
-            {allTags.length > 0 && showTagFilter && (
-              <div className="mb-3 md:mb-4 p-3 md:p-4 bg-white border border-gray-300 rounded-xl shadow-sm">
-                <p className="text-xs font-semibold text-gray-600 mb-2 flex items-center gap-2">
+              {/* Tag Filter Button */}
+              {allTags.length > 0 && (
+                <button
+                  onClick={() => setShowTagFilter(!showTagFilter)}
+                  className={`px-2 py-2 rounded-lg transition-all border flex items-center justify-center ${
+                    showTagFilter || selectedTags.length > 0
+                      ? 'bg-blue-600 text-white border-blue-600'
+                      : 'bg-white text-gray-700 border-gray-300 hover:border-gray-400'
+                  }`}
+                  aria-expanded={showTagFilter}
+                  title="Filtrera taggar"
+                >
                   <svg
                     className="w-4 h-4"
                     fill="none"
@@ -1052,12 +1015,17 @@ export default function PlannerGrid({
                       strokeLinecap="round"
                       strokeLinejoin="round"
                       strokeWidth={2}
-                      d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01"
+                      d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"
                     />
                   </svg>
-                  Filtrera efter taggar
-                </p>
-                <div className="flex flex-wrap gap-2 mb-3">
+                </button>
+              )}
+            </div>
+
+            {/* Tag Filter */}
+            {allTags.length > 0 && showTagFilter && (
+              <div className="mb-3 p-2.5 bg-white border border-gray-200 rounded-lg">
+                <div className="flex flex-wrap gap-1.5">
                   {allTags.map((tag) => (
                     <button
                       key={tag}
@@ -1068,10 +1036,10 @@ export default function PlannerGrid({
                             : [...prev, tag]
                         )
                       }
-                      className={`px-3 py-1.5 md:px-4 md:py-2 rounded-full text-[11px] md:text-xs font-semibold transition-all border ${
+                      className={`px-2.5 py-1 rounded-md text-xs font-medium transition-colors border ${
                         selectedTags.includes(tag)
-                          ? 'bg-gradient-to-r from-blue-600 to-blue-700 text-white border-blue-600 shadow-md'
-                          : 'bg-white text-gray-700 border-gray-300 hover:border-blue-400 hover:shadow-md'
+                          ? 'bg-blue-600 text-white border-blue-600'
+                          : 'bg-gray-100 text-gray-700 border-gray-100 hover:bg-gray-200 hover:border-gray-200'
                       }`}
                       aria-pressed={selectedTags.includes(tag)}
                       aria-label={`Filtrera efter tagg: ${tag}`}
@@ -1081,50 +1049,45 @@ export default function PlannerGrid({
                   ))}
                 </div>
                 {selectedTags.length > 0 && (
-                  <button
-                    onClick={() => setSelectedTags([])}
-                    className="text-xs text-blue-600 hover:text-blue-700 font-semibold underline"
-                  >
-                    Rensa alla filter
-                  </button>
+                  <div className="mt-2 pt-2 border-t border-gray-200">
+                    <button
+                      onClick={() => setSelectedTags([])}
+                      className="text-xs text-gray-500 hover:text-gray-700 font-medium underline"
+                    >
+                      Rensa alla filter
+                    </button>
+                  </div>
                 )}
               </div>
             )}
 
             {/* Quick Add - Placeholder Recipes */}
             {placeholderRecipes.length > 0 && (
-              <>
-                <p className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-2 flex items-center gap-2">
-                  <svg
-                    className="w-4 h-4 text-yellow-500"
-                    fill="currentColor"
-                    viewBox="0 0 20 20"
-                  >
-                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                  </svg>
+              <div className="mb-3">
+                <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wide mb-1.5 px-0.5">
                   Snabbval
-                </p>
-                <div className="grid grid-cols-2 gap-2 mb-4">
+                </div>
+                <div className="grid grid-cols-2 gap-1.5">
                   {placeholderRecipes.map((p) => (
                     <button
                       key={p.id}
                       onClick={() => addToPlanning(p)}
-                      className="flex items-center justify-center p-2.5 md:p-3 bg-white border border-dashed border-gray-300 rounded-lg hover:bg-blue-50 hover:border-blue-400 transition-all text-xs md:text-sm font-semibold text-gray-700 hover:text-blue-600 shadow-sm line-clamp-2"
+                      className="flex items-center justify-center p-2 bg-white border border-dashed border-gray-300 rounded-lg hover:bg-blue-50 hover:border-blue-400 transition-all text-xs font-medium text-gray-700 hover:text-blue-600 line-clamp-2"
                       title={p.name}
                     >
                       {p.name}
                     </button>
                   ))}
                 </div>
-              </>
+              </div>
             )}
 
             {/* Recipe List */}
-            <div className="space-y-2 flex-1">
+            <div className="space-y-1.5 flex-1">
               {filteredRecipes.length === 0 ? (
-                <div className="text-center text-gray-400 text-sm mt-8 py-8 px-4 bg-white rounded-xl border border-dashed border-gray-200">
+                <div className="text-center text-gray-400 text-sm mt-8 py-6 px-4 bg-white rounded-lg border border-dashed border-gray-200">
                   <svg
-                    className="w-10 h-10 mx-auto mb-2 text-gray-300"
+                    className="w-8 h-8 mx-auto mb-2 text-gray-300"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -1136,12 +1099,10 @@ export default function PlannerGrid({
                       d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
                     />
                   </svg>
-                  <p className="text-xs md:text-sm font-semibold">
-                    Inga recept hittades
-                  </p>
+                  <p className="text-xs font-medium">Inga recept hittades</p>
                   {searchQuery && (
-                    <p className="text-[10px] md:text-xs text-gray-400 mt-1">
-                      Försök med andra sökord eller taggar
+                    <p className="text-[10px] text-gray-400 mt-0.5">
+                      Försök med andra sökord
                     </p>
                   )}
                 </div>
