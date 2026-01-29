@@ -41,31 +41,28 @@ export default function ExtraMealRow({
             {mealName}
           </span>
         </div>
-        <button
-          onClick={() => onRemoveExtra(extra.id)}
-          disabled={isPlannerLocked}
-          className={`flex-shrink-0 p-0.5 rounded-md transition-all ${
-            isPlannerLocked
-              ? 'opacity-50 cursor-not-allowed text-gray-400'
-              : 'text-gray-400 hover:bg-gray-200 hover:text-red-600 opacity-0 group-hover:opacity-100'
-          }`}
-          title="Ta bort extra måltid"
-          aria-label={`Ta bort ${mealName}`}
-        >
-          <svg
-            className="w-3 h-3 md:w-3.5 md:h-3.5"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
+        {!isPlannerLocked && (
+          <button
+            onClick={() => onRemoveExtra(extra.id)}
+            className="flex-shrink-0 p-0.5 rounded-md transition-all text-gray-400 hover:bg-gray-200 hover:text-red-600 opacity-0 group-hover:opacity-100"
+            title="Ta bort extra måltid"
+            aria-label={`Ta bort ${mealName}`}
           >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2.5}
-              d="M6 18L18 6M6 6l12 12"
-            />
-          </svg>
-        </button>
+            <svg
+              className="w-3 h-3 md:w-3.5 md:h-3.5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2.5}
+                d="M6 18L18 6M6 6l12 12"
+              />
+            </svg>
+          </button>
+        )}
       </div>
 
       {/* Person Slots */}
