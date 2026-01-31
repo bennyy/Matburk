@@ -1,3 +1,12 @@
+import {
+  Search,
+  ChevronDown,
+  List,
+  AlignJustify,
+  FileText,
+  Tag,
+  BookOpen,
+} from 'lucide-react';
 import RecipeListItem from './RecipeListItem';
 import { VIEW_MODES } from './constants';
 
@@ -37,19 +46,7 @@ export default function LibraryTab({
           className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none focus:border-transparent bg-white transition-all"
           aria-label="Sök recept"
         />
-        <svg
-          className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-          />
-        </svg>
+        <Search className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
       </div>
 
       {/* Controls Row */}
@@ -66,22 +63,18 @@ export default function LibraryTab({
             className="w-full appearance-none pl-3 pr-8 py-2 text-xs font-medium border border-gray-300 rounded-lg bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all cursor-pointer"
             aria-label="Sortera recept"
           >
-            <option value="total_meals-desc">🥡 Mest använd</option>
-            <option value="total_meals-asc">🥡 Minst använd</option>
-            <option value="vote-desc">❤️ Populär</option>
-            <option value="vote-asc">❤️ Opopulär</option>
-            <option value="last_cooked-desc">📅 Senast</option>
-            <option value="last_cooked-asc">📅 Längesen</option>
-            <option value="created-desc">✨ Nytt</option>
-            <option value="created-asc">✨ Gamla</option>
-            <option value="name-asc">🔤 A-Ö</option>
-            <option value="name-desc">🔤 Ö-A</option>
+            <option value="total_meals-desc">Mest använd</option>
+            <option value="total_meals-asc">Minst använd</option>
+            <option value="vote-desc">Populär</option>
+            <option value="vote-asc">Opopulär</option>
+            <option value="last_cooked-desc">Senast lagad</option>
+            <option value="last_cooked-asc">Länge sedan</option>
+            <option value="created-desc">Nyast</option>
+            <option value="created-asc">Gammal</option>
+            <option value="name-asc">A-Ö</option>
+            <option value="name-desc">Ö-A</option>
           </select>
-          <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-500">
-            <svg className="fill-current h-3 w-3" viewBox="0 0 20 20">
-              <path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z" />
-            </svg>
-          </div>
+          <ChevronDown className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 h-3 w-3 text-gray-500" />
         </div>
 
         {/* View Mode Toggle */}
@@ -93,19 +86,7 @@ export default function LibraryTab({
             aria-label="Minimal vy"
             aria-pressed={viewMode === VIEW_MODES.MINIMAL}
           >
-            <svg
-              className="h-4 w-4"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              strokeWidth={2}
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M4 6h16M4 12h16M4 18h16"
-              />
-            </svg>
+            <List className="h-4 w-4" />
           </button>
           <button
             onClick={() => setViewMode(VIEW_MODES.COMPACT)}
@@ -114,19 +95,7 @@ export default function LibraryTab({
             aria-label="Kompakt vy"
             aria-pressed={viewMode === VIEW_MODES.COMPACT}
           >
-            <svg
-              className="h-4 w-4"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              strokeWidth={2}
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M4 6h16M4 10h16M4 14h16"
-              />
-            </svg>
+            <AlignJustify className="h-4 w-4" />
           </button>
           <button
             onClick={() => setViewMode(VIEW_MODES.DETAILED)}
@@ -135,19 +104,7 @@ export default function LibraryTab({
             aria-label="Detaljerad vy"
             aria-pressed={viewMode === VIEW_MODES.DETAILED}
           >
-            <svg
-              className="h-4 w-4"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              strokeWidth={2}
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M4 6h16M4 10h16M4 14h10M4 18h10"
-              />
-            </svg>
+            <FileText className="h-4 w-4" />
           </button>
         </div>
 
@@ -163,19 +120,7 @@ export default function LibraryTab({
             aria-expanded={showTagFilter}
             title="Filtrera taggar"
           >
-            <svg
-              className="w-4 h-4"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"
-              />
-            </svg>
+            <Tag className="w-4 h-4" />
           </button>
         )}
       </div>
@@ -244,19 +189,7 @@ export default function LibraryTab({
       <div className="space-y-1.5 flex-1">
         {filteredRecipes.length === 0 ? (
           <div className="text-center text-gray-400 text-sm mt-8 py-6 px-4 bg-white rounded-lg border border-dashed border-gray-200">
-            <svg
-              className="w-8 h-8 mx-auto mb-2 text-gray-300"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
-              />
-            </svg>
+            <BookOpen className="w-8 h-8 mx-auto mb-2 text-gray-300" />
             <p className="text-xs font-medium">Inga recept hittades</p>
             {searchQuery && (
               <p className="text-[10px] text-gray-400 mt-0.5">

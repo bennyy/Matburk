@@ -1,13 +1,14 @@
 import { useState, useEffect } from 'react';
+import { Popcorn, Sandwich, Salad, FileText } from 'lucide-react';
 
 /**
  * ExtraPresetModal - Modal for selecting an extra meal preset
  */
 const DEFAULT_PRESETS = [
-  { id: 'snack', name: 'Snack', emoji: '🍿' },
-  { id: 'mellanmål', name: 'Mellanmål', emoji: '🥪' },
-  { id: 'tillbehör', name: 'Tillbehör', emoji: '🥗' },
-  { id: 'övrigt', name: 'Övrigt', emoji: '📝' },
+  { id: 'snack', name: 'Snack', Icon: Popcorn },
+  { id: 'mellanmål', name: 'Mellanmål', Icon: Sandwich },
+  { id: 'tillbehör', name: 'Tillbehör', Icon: Salad },
+  { id: 'övrigt', name: 'Övrigt', Icon: FileText },
 ];
 
 export default function ExtraPresetModal({
@@ -34,16 +35,19 @@ export default function ExtraPresetModal({
         ) : (
           <>
             <div className="grid grid-cols-2 gap-3 mb-4">
-              {presets.map((preset) => (
-                <button
-                  key={preset.name}
-                  onClick={() => onSelectPreset(preset.name)}
-                  className="flex flex-col items-center justify-center gap-2 p-4 rounded-lg border-2 border-gray-200 hover:border-blue-400 hover:bg-blue-50 transition-all font-semibold text-gray-700 hover:text-blue-600"
-                >
-                  <span className="text-2xl">{preset.emoji}</span>
-                  <span className="text-sm">{preset.name}</span>
-                </button>
-              ))}
+              {presets.map((preset) => {
+                const Icon = preset.Icon;
+                return (
+                  <button
+                    key={preset.name}
+                    onClick={() => onSelectPreset(preset.name)}
+                    className="flex flex-col items-center justify-center gap-2 p-4 rounded-lg border-2 border-gray-200 hover:border-blue-400 hover:bg-blue-50 transition-all font-semibold text-gray-700 hover:text-blue-600"
+                  >
+                    <Icon className="w-8 h-8" />
+                    <span className="text-sm">{preset.name}</span>
+                  </button>
+                );
+              })}
             </div>
 
             <button

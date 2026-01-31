@@ -1,3 +1,5 @@
+import { ChefHat, Heart, Plus, Calendar, FileText, UtensilsCrossed } from 'lucide-react';
+
 /**
  * RecipeListItem - Individual recipe in the library list
  * Supports minimal, compact and detailed view modes
@@ -36,15 +38,11 @@ export default function RecipeListItem({
             className="flex items-center gap-0.5"
             title="Antal gånger lagad"
           >
-            <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M4 6h16v2H4V6zm1 3h14v9a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V9zm3-3V3h2v3h4V3h2v3h1a2 2 0 0 1 2 2v11a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4V8a2 2 0 0 1 2-2h1z" />
-            </svg>
+            <ChefHat className="w-3 h-3" />
             {recipe.meal_count || 0}
           </span>
           <span className="flex items-center gap-0.5" title="Röster">
-            <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
-            </svg>
+            <Heart className="w-3 h-3" />
             {recipe.vote_count}
           </span>
         </div>
@@ -56,19 +54,7 @@ export default function RecipeListItem({
           className="bg-blue-600 hover:bg-blue-700 text-white w-7 h-7 rounded-full flex items-center justify-center transition-all flex-shrink-0"
           aria-label={`Lägg till ${recipe.name} till matlådor`}
         >
-          <svg
-            className="w-3.5 h-3.5"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={3}
-              d="M12 4v16m8-8H4"
-            />
-          </svg>
+          <Plus className="w-3.5 h-3.5" strokeWidth={3} />
         </button>
       </div>
     );
@@ -100,8 +86,8 @@ export default function RecipeListItem({
             }}
           />
         ) : (
-          <div className="w-full h-full flex items-center justify-center text-2xl">
-            🍽️
+          <div className="w-full h-full flex items-center justify-center text-gray-300">
+            <UtensilsCrossed className="w-12 h-12" />
           </div>
         )}
       </div>
@@ -139,29 +125,11 @@ export default function RecipeListItem({
               )}
             <div className="flex items-center gap-2 text-[10px] text-gray-500 font-medium">
               <span className="flex items-center gap-1 bg-gray-50 px-2 py-0.5 rounded">
-                <svg
-                  className="w-3 h-3"
-                  fill="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path d="M4 6h16v2H4V6zm1 3h14v9a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V9zm3-3V3h2v3h4V3h2v3h1a2 2 0 0 1 2 2v11a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4V8a2 2 0 0 1 2-2h1z" />
-                </svg>
+                <ChefHat className="w-3 h-3" />
                 {recipe.meal_count || 0}x lagad
               </span>
               <span className="flex items-center gap-1 bg-gray-50 px-2 py-0.5 rounded">
-                <svg
-                  className="w-3 h-3"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-                  />
-                </svg>
+                <Calendar className="w-3 h-3" />
                 {recipe.last_cooked_date || 'Aldrig'}
               </span>
               {recipe.notes && (
@@ -169,19 +137,7 @@ export default function RecipeListItem({
                   className="flex items-center gap-1 bg-amber-50 text-amber-700 px-2 py-0.5 rounded"
                   title="Har anteckningar"
                 >
-                  <svg
-                    className="w-3 h-3"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                    />
-                  </svg>
+                  <FileText className="w-3 h-3" />
                   Info
                 </span>
               )}
@@ -223,9 +179,7 @@ export default function RecipeListItem({
               className="bg-red-50 hover:bg-red-100 text-red-600 transition-all font-medium border border-red-200 flex items-center gap-1 text-[10px] px-2 py-1 rounded"
               aria-label={`Rösta för ${recipe.name}`}
             >
-              <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
-              </svg>
+              <Heart className="w-3 h-3" fill="currentColor" />
               <span>{recipe.vote_count}</span>
             </button>
           </div>
@@ -237,19 +191,7 @@ export default function RecipeListItem({
             className="absolute bottom-2 right-2 bg-blue-600 hover:bg-blue-700 text-white transition-all flex items-center justify-center px-3 py-1.5 rounded-lg text-xs font-medium gap-1"
             aria-label={`Lägg till ${recipe.name} till matlådor`}
           >
-            <svg
-              className="w-3.5 h-3.5"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={3}
-                d="M12 4v16m8-8H4"
-              />
-            </svg>
+            <Plus className="w-3.5 h-3.5" strokeWidth={3} />
             <span>Lägg till</span>
           </button>
         </>
@@ -265,13 +207,7 @@ export default function RecipeListItem({
               className="bg-red-50 hover:bg-red-100 text-red-600 transition-all font-medium border border-red-200 flex items-center gap-0.5 text-[10px] px-1.5 py-0.5 rounded"
               aria-label={`Rösta för ${recipe.name}`}
             >
-              <svg
-                className="w-2.5 h-2.5"
-                fill="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
-              </svg>
+              <Heart className="w-2.5 h-2.5" fill="currentColor" />
               <span>{recipe.vote_count}</span>
             </button>
             <button
@@ -282,19 +218,7 @@ export default function RecipeListItem({
               className="bg-blue-600 hover:bg-blue-700 text-white w-7 h-7 rounded-full flex items-center justify-center transition-all"
               aria-label={`Lägg till ${recipe.name} till matlådor`}
             >
-              <svg
-                className="w-3.5 h-3.5"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={3}
-                  d="M12 4v16m8-8H4"
-                />
-              </svg>
+              <Plus className="w-3.5 h-3.5" strokeWidth={3} />
             </button>
           </div>
         </>

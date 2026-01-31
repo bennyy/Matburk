@@ -1,4 +1,5 @@
 import { format } from 'date-fns';
+import { Sun, Plus } from 'lucide-react';
 
 import MealSlot from './MealSlot';
 
@@ -19,23 +20,11 @@ export default function MealRow({
   return (
     <div className="flex-1 flex flex-col bg-gray-50 rounded-lg p-1.5 md:p-2">
       <div className="flex items-center justify-center gap-1 mb-1.5 md:mb-2">
-        <svg
-          className="w-2.5 h-2.5 md:w-3 md:h-3 text-gray-400"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d={
-              meal.name === 'LUNCH'
-                ? 'M12 6v6m0 0v6m0-6h6m-6 0H6'
-                : 'M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z'
-            }
-          />
-        </svg>
+        {meal.name === 'LUNCH' ? (
+          <Plus className="w-2.5 h-2.5 md:w-3 md:h-3 text-gray-400" />
+        ) : (
+          <Sun className="w-2.5 h-2.5 md:w-3 md:h-3 text-gray-400" />
+        )}
         <span className="text-[9px] md:text-[10px] font-bold text-gray-500 uppercase tracking-wide">
           {meal.name}
         </span>

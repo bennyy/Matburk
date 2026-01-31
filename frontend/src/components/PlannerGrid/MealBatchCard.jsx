@@ -1,3 +1,5 @@
+import { CheckCircle2, X, XCircle, AlertCircle } from 'lucide-react';
+
 /**
  * MealBatchCard - Displays a meal batch with portion controls
  */
@@ -32,13 +34,7 @@ export default function MealBatchCard({
           </span>
           {isSelected && (
             <span className="inline-flex items-center gap-1 text-xs text-blue-600 font-semibold">
-              <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-                <path
-                  fillRule="evenodd"
-                  d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-                  clipRule="evenodd"
-                />
-              </svg>
+              <CheckCircle2 className="w-3 h-3" />
               Vald
             </span>
           )}
@@ -56,19 +52,7 @@ export default function MealBatchCard({
           aria-disabled={isWeekLocked}
           aria-label={`Removera ${batch.recipeName}`}
         >
-          <svg
-            className="w-5 h-5"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M6 18L18 6M6 6l12 12"
-            />
-          </svg>
+          <X className="w-5 h-5" />
         </button>
       </div>
 
@@ -128,35 +112,17 @@ export default function MealBatchCard({
       >
         {remaining === 0 ? (
           <>
-            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-              <path
-                fillRule="evenodd"
-                d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-                clipRule="evenodd"
-              />
-            </svg>
+            <CheckCircle2 className="w-4 h-4" />
             Klar!
           </>
         ) : remaining < 0 ? (
           <>
-            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-              <path
-                fillRule="evenodd"
-                d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
-                clipRule="evenodd"
-              />
-            </svg>
+            <XCircle className="w-4 h-4" />
             {Math.abs(remaining)} för många!
           </>
         ) : (
           <>
-            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-              <path
-                fillRule="evenodd"
-                d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
-                clipRule="evenodd"
-              />
-            </svg>
+            <AlertCircle className="w-4 h-4" />
             {remaining} kvar att placera
           </>
         )}

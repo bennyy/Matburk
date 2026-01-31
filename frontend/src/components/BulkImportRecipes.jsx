@@ -1,5 +1,13 @@
 import { useState } from 'react';
 import axios from 'axios';
+import {
+  X,
+  ChevronDown,
+  ChevronRight,
+  CheckCircle,
+  Loader2,
+  Plus,
+} from 'lucide-react';
 
 /**
  * BulkImportRecipes - Component for bulk importing recipes from CSV/TSV data
@@ -98,19 +106,7 @@ Tacos;Mexikanskt, Snabbt;https://example.com/tacos;null;4`;
             className="text-gray-500 hover:text-gray-700"
             aria-label="Stäng"
           >
-            <svg
-              className="w-6 h-6"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M6 18L18 6M6 6l12 12"
-              />
-            </svg>
+            <X className="w-6 h-6" />
           </button>
         </div>
 
@@ -154,19 +150,11 @@ Tacos;Mexikanskt, Snabbt;https://example.com/tacos;null;4`;
             onClick={() => setShowExample(!showExample)}
             className="text-sm text-blue-600 hover:text-blue-800 underline flex items-center gap-1"
           >
-            <svg
-              className="w-4 h-4"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d={showExample ? 'M19 9l-7 7-7-7' : 'M9 5l7 7-7 7'}
-              />
-            </svg>
+            {showExample ? (
+              <ChevronDown className="w-4 h-4" />
+            ) : (
+              <ChevronRight className="w-4 h-4" />
+            )}
             {showExample ? 'Dölj exempel' : 'Visa exempel'}
           </button>
 
@@ -221,7 +209,7 @@ Tacos;Mexikanskt, Snabbt;https://example.com/tacos;null;4`;
                 }`}
               >
                 <div className="flex items-start gap-2">
-                  <svg
+                  <CheckCircle
                     className={`w-5 h-5 flex-shrink-0 mt-0.5 ${
                       result.errors === 0
                         ? 'text-green-600'
@@ -229,14 +217,7 @@ Tacos;Mexikanskt, Snabbt;https://example.com/tacos;null;4`;
                           ? 'text-yellow-600'
                           : 'text-red-600'
                     }`}
-                    fill="currentColor"
-                    viewBox="0 0 20 20"
-                  >
-                    <path
-                      fillRule="evenodd"
-                      d="M10 18a8 8 0 100-16 8 8 0 000 16z"
-                    />
-                  </svg>
+                  />
                   <div className="flex-1">
                     <h4
                       className={`font-semibold ${
@@ -297,42 +278,12 @@ Tacos;Mexikanskt, Snabbt;https://example.com/tacos;null;4`;
               >
                 {isLoading ? (
                   <>
-                    <svg
-                      className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                    >
-                      <circle
-                        className="opacity-25"
-                        cx="12"
-                        cy="12"
-                        r="10"
-                        stroke="currentColor"
-                        strokeWidth="4"
-                      />
-                      <path
-                        className="opacity-75"
-                        fill="currentColor"
-                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                      />
-                    </svg>
+                    <Loader2 className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" />
                     Importerar...
                   </>
                 ) : (
                   <>
-                    <svg
-                      className="w-5 h-5 mr-2"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M12 4v16m8-8H4"
-                      />
-                    </svg>
+                    <Plus className="w-5 h-5 mr-2" />
                     Importera{' '}
                     {
                       csvData
