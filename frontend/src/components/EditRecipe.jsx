@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react';
 import axios from 'axios';
+import { Trash2 } from 'lucide-react';
 
 import TagInput from './TagInput';
 
@@ -213,10 +214,11 @@ export default function EditRecipe({
               type="button"
               onClick={handleDelete}
               disabled={isLoading}
-              className="text-red-600 hover:text-red-700 text-sm font-semibold px-3 py-2 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="text-red-600 hover:text-red-700 text-sm font-semibold px-3 py-2 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5"
               aria-label="Ta bort receptet"
             >
-              🗑️ Ta bort recept
+              <Trash2 className="w-4 h-4" />
+              Ta bort recept
             </button>
 
             {/* Action Buttons (Right) */}
