@@ -95,7 +95,7 @@ Tacos;Mexikanskt, Snabbt;https://example.com/tacos;null;4`;
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-lg shadow-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
         <div className="p-6 border-b border-gray-200 flex justify-between items-center sticky top-0 bg-white">
           <h2 className="text-xl font-bold text-gray-900">
@@ -103,7 +103,7 @@ Tacos;Mexikanskt, Snabbt;https://example.com/tacos;null;4`;
           </h2>
           <button
             onClick={onClose}
-            className="text-gray-500 hover:text-gray-700"
+            className="text-gray-500 hover:text-gray-700 transition-colors"
             aria-label="Stäng"
           >
             <X className="w-6 h-6" />
@@ -114,14 +114,14 @@ Tacos;Mexikanskt, Snabbt;https://example.com/tacos;null;4`;
           {/* Instructions */}
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
             <h3 className="font-semibold text-blue-900 mb-2">Format</h3>
-            <p className="text-sm text-blue-800 mb-2">
+            <p className="text-sm text-blue-800 mb-3">
               Använd semikolon (;) för att separera fälten. Komman (,) för att
               separera taggar.
             </p>
-            <code className="text-xs bg-white p-2 rounded block text-gray-700 overflow-x-auto">
+            <code className="text-xs bg-white p-3 rounded-lg block text-gray-700 overflow-x-auto border border-gray-200">
               title;tags;recipe_url;image_url;portions
             </code>
-            <div className="mt-2 text-sm text-blue-800">
+            <div className="mt-3 text-sm text-blue-800 space-y-1">
               <p>
                 • <strong>title</strong> (obligatorisk): Receptets namn
               </p>
@@ -138,9 +138,7 @@ Tacos;Mexikanskt, Snabbt;https://example.com/tacos;null;4`;
                 • <strong>portions</strong> (valfri): Antal portioner (standard:
                 4)
               </p>
-              <p className="mt-2">
-                • Använd "null" för att hoppa över ett fält
-              </p>
+              <p>• Använd "null" för att hoppa över ett fält</p>
             </div>
           </div>
 
@@ -148,7 +146,7 @@ Tacos;Mexikanskt, Snabbt;https://example.com/tacos;null;4`;
           <button
             type="button"
             onClick={() => setShowExample(!showExample)}
-            className="text-sm text-blue-600 hover:text-blue-800 underline flex items-center gap-1"
+            className="text-sm text-blue-600 hover:text-blue-800 underline flex items-center gap-1 transition-colors"
           >
             {showExample ? (
               <ChevronDown className="w-4 h-4" />
@@ -161,16 +159,16 @@ Tacos;Mexikanskt, Snabbt;https://example.com/tacos;null;4`;
           {/* Example Data */}
           {showExample && (
             <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
-              <p className="text-sm font-semibold text-gray-700 mb-2">
+              <p className="text-sm font-semibold text-gray-700 mb-3">
                 Exempel:
               </p>
-              <pre className="text-xs bg-white p-3 rounded overflow-x-auto border border-gray-200">
+              <pre className="text-xs bg-white p-3 rounded-lg overflow-x-auto border border-gray-200">
                 {exampleData}
               </pre>
               <button
                 type="button"
                 onClick={() => setCsvData(exampleData)}
-                className="mt-2 text-xs bg-blue-100 text-blue-700 px-3 py-1 rounded hover:bg-blue-200"
+                className="mt-3 text-xs bg-blue-100 text-blue-700 px-3 py-1.5 rounded-lg hover:bg-blue-200 transition-colors font-medium"
               >
                 Kopiera exempel
               </button>

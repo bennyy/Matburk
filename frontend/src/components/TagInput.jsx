@@ -58,7 +58,7 @@ const TagInput = ({ value, onChange, placeholder }) => {
       {tags.map((tag, index) => (
         <span
           key={index}
-          className="bg-green-100 text-green-800 text-sm font-medium px-3 py-1 rounded-full flex items-center gap-1"
+          className="bg-green-100 text-green-800 text-sm font-medium px-3 py-1.5 rounded-full flex items-center gap-1"
         >
           {tag}
           <button
@@ -82,7 +82,6 @@ const TagInput = ({ value, onChange, placeholder }) => {
         value={inputValue}
         onChange={(e) => setInputValue(e.target.value)}
         onKeyDown={handleKeyDown}
-        // Lägg till taggen om man klickar utanför (blur)
         onBlur={addTag}
       />
     </div>

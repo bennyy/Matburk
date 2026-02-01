@@ -35,22 +35,22 @@ export default function LibraryTab({
   onVote,
 }) {
   return (
-    <div className="flex-1 overflow-y-auto p-3 bg-gray-50 flex flex-col">
+    <div className="flex-1 overflow-y-auto p-4 bg-gray-50 flex flex-col">
       {/* Search Bar */}
-      <div className="mb-2 relative">
+      <div className="mb-4 relative">
         <input
           type="text"
           placeholder="Sök recept..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none focus:border-transparent bg-white transition-all"
+          className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none focus:border-transparent bg-white transition-all"
           aria-label="Sök recept"
         />
-        <Search className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
+        <Search className="w-4 h-4 text-gray-500 absolute left-3 top-1/2 -translate-y-1/2" />
       </div>
 
       {/* Controls Row */}
-      <div className="mb-3 flex gap-2">
+      <div className="mb-4 flex gap-3">
         {/* Sort Dropdown */}
         <div className="relative flex-1">
           <select
@@ -127,8 +127,8 @@ export default function LibraryTab({
 
       {/* Tag Filter */}
       {allTags.length > 0 && showTagFilter && (
-        <div className="mb-3 p-2.5 bg-white border border-gray-200 rounded-lg">
-          <div className="flex flex-wrap gap-1.5">
+        <div className="mb-4 p-3 bg-white border border-gray-200 rounded-lg">
+          <div className="flex flex-wrap gap-2">
             {allTags.map((tag) => (
               <button
                 key={tag}
@@ -139,10 +139,10 @@ export default function LibraryTab({
                       : [...prev, tag]
                   )
                 }
-                className={`px-2.5 py-1 rounded-md text-xs font-medium transition-colors border ${
+                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors border ${
                   selectedTags.includes(tag)
                     ? 'bg-blue-600 text-white border-blue-600'
-                    : 'bg-gray-100 text-gray-700 border-gray-100 hover:bg-gray-200 hover:border-gray-200'
+                    : 'bg-gray-100 text-gray-700 border-gray-200 hover:bg-gray-200'
                 }`}
                 aria-pressed={selectedTags.includes(tag)}
                 aria-label={`Filtrera efter tagg: ${tag}`}

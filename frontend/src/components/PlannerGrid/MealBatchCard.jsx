@@ -18,10 +18,10 @@ export default function MealBatchCard({
   return (
     <div
       onClick={() => onSelect(isSelected ? null : batch.recipeId)}
-      className={`bg-white p-4 rounded-xl border shadow-sm cursor-pointer relative transition-all ${
+      className={`bg-white p-4 rounded-lg border shadow-sm cursor-pointer relative transition-all ${
         isSelected
-          ? 'border-blue-500 ring-2 ring-blue-200 shadow-lg transform scale-[1.02]'
-          : 'border-gray-200 hover:border-blue-300 hover:shadow-md'
+          ? 'border-blue-500 ring-2 ring-blue-300 shadow-md'
+          : 'border-gray-200 hover:border-gray-300 hover:shadow-sm'
       }`}
       role="button"
       tabIndex={0}
@@ -44,10 +44,10 @@ export default function MealBatchCard({
             if (isWeekLocked) return;
             onRemove(e, batch.recipeId);
           }}
-          className={`w-8 h-8 rounded-full flex items-center justify-center transition-all ${
+          className={`w-8 h-8 rounded-lg flex items-center justify-center transition-all ${
             isWeekLocked
               ? 'text-gray-300 cursor-not-allowed'
-              : 'text-gray-400 hover:text-red-600 hover:bg-red-50'
+              : 'text-gray-500 hover:text-red-600 hover:bg-red-50'
           }`}
           aria-disabled={isWeekLocked}
           aria-label={`Removera ${batch.recipeName}`}
@@ -57,9 +57,9 @@ export default function MealBatchCard({
       </div>
 
       {/* Portion Controls */}
-      <div className="flex items-center justify-between bg-gray-50 rounded-lg p-3 mb-3">
-        <span className="text-xs text-gray-600 font-semibold">Planerat:</span>
-        <div className="flex items-center gap-3">
+      <div className="flex items-center justify-between bg-gray-50 rounded-lg p-3 gap-3 mb-3">
+        <span className="text-xs text-gray-700 font-semibold">Planerat:</span>
+        <div className="flex items-center gap-2">
           <button
             onClick={(e) => {
               e.stopPropagation();
@@ -68,7 +68,7 @@ export default function MealBatchCard({
             }}
             disabled={isWeekLocked}
             aria-disabled={isWeekLocked}
-            className={`w-8 h-8 border rounded-lg flex items-center justify-center font-bold transition-all ${
+            className={`w-8 h-8 border rounded-lg flex items-center justify-center font-bold text-sm transition-all ${
               isWeekLocked
                 ? 'bg-gray-50 border-gray-200 text-gray-400 cursor-not-allowed'
                 : 'bg-white border-gray-300 hover:border-blue-500 hover:bg-blue-50 hover:text-blue-600'
@@ -77,7 +77,7 @@ export default function MealBatchCard({
           >
             −
           </button>
-          <span className="font-bold text-lg w-8 text-center text-gray-900">
+          <span className="font-bold text-base w-8 text-center text-gray-900">
             {batch.targetPortions}
           </span>
           <button
@@ -88,7 +88,7 @@ export default function MealBatchCard({
             }}
             disabled={isWeekLocked}
             aria-disabled={isWeekLocked}
-            className={`w-8 h-8 border rounded-lg flex items-center justify-center font-bold transition-all ${
+            className={`w-8 h-8 border rounded-lg flex items-center justify-center font-bold text-sm transition-all ${
               isWeekLocked
                 ? 'bg-gray-50 border-gray-200 text-gray-400 cursor-not-allowed'
                 : 'bg-white border-gray-300 hover:border-blue-500 hover:bg-blue-50 hover:text-blue-600'

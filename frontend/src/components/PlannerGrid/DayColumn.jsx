@@ -39,9 +39,9 @@ export default function DayColumn({
   };
   return (
     <div
-      className={`bg-white rounded-xl shadow-sm border overflow-hidden flex flex-col transition-all ${
+      className={`bg-white rounded-lg shadow-sm border overflow-hidden flex flex-col transition-all ${
         isToday
-          ? 'ring-2 ring-blue-500 border-blue-300 shadow-lg'
+          ? 'ring-2 ring-blue-500 border-blue-300 shadow-md'
           : 'border-gray-200 hover:border-gray-300'
       }`}
     >
@@ -49,8 +49,8 @@ export default function DayColumn({
       <div
         className={`p-3 text-center font-bold text-sm transition-all ${
           isToday
-            ? 'bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-md'
-            : 'bg-gradient-to-r from-gray-700 to-gray-800 text-white'
+            ? 'bg-blue-600 text-white shadow-sm'
+            : 'bg-gray-700 text-white'
         }`}
       >
         <div className="flex items-center justify-center gap-2">

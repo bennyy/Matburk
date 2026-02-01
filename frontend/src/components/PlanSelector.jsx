@@ -93,15 +93,15 @@ function PlanSelector({
       </div>
 
       {/* Plan list */}
-      <div className="flex flex-wrap gap-2 mb-4">
+      <div className="flex flex-wrap gap-3 mb-4">
         {mealPlans.map((plan) => (
           <button
             key={plan.id}
             onClick={() => onSelectPlan(plan.id)}
-            className={`px-4 py-2 rounded font-medium transition ${
+            className={`px-4 py-2.5 rounded-lg font-medium transition ${
               selectedPlanId === plan.id
-                ? 'bg-blue-600 text-white'
-                : 'bg-white border border-gray-300 text-gray-800 hover:bg-gray-50'
+                ? 'bg-blue-600 text-white shadow-md'
+                : 'bg-white border border-gray-300 text-gray-800 hover:border-gray-400 hover:bg-gray-50'
             }`}
           >
             {plan.name}
@@ -111,33 +111,33 @@ function PlanSelector({
 
       {/* Actions */}
       <div className="flex flex-col gap-4">
-        <div className="flex gap-2">
+        <div className="flex gap-3">
           <button
             onClick={() => {
               setShowCreateModal(true);
               setError(null);
             }}
-            className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded font-medium"
+            className="bg-green-600 hover:bg-green-700 text-white px-4 py-2.5 rounded-lg font-medium shadow-sm hover:shadow-md transition-all"
           >
             + Ny plan
           </button>
         </div>
 
         {/* Join via code */}
-        <div className="bg-white border border-gray-200 rounded p-3">
-          <p className="text-sm font-medium mb-2">Gå med via kod</p>
+        <div className="bg-white border border-gray-200 rounded-lg p-4">
+          <p className="text-sm font-medium text-gray-900 mb-3">Gå med via kod</p>
           <div className="flex gap-2">
             <input
               type="text"
               placeholder="Klistra in kod här"
               value={joinCode}
               onChange={(e) => setJoinCode(e.target.value)}
-              className="flex-1 border border-gray-300 rounded px-3 py-2"
+              className="flex-1 border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
             />
             <button
               onClick={handleJoinPlan}
               disabled={joinLoading}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded font-medium disabled:opacity-50"
+              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-lg font-medium disabled:opacity-50 shadow-sm hover:shadow-md transition-all"
             >
               {joinLoading ? 'Går med...' : 'Gå med'}
             </button>

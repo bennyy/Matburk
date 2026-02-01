@@ -273,7 +273,7 @@ export default function PlannerGrid({
 
       {/* ========== CALENDAR GRID ========== */}
       {mealPlanner && (
-        <div className="flex-1 flex flex-col overflow-hidden bg-slate-100">
+        <div className="flex-1 flex flex-col overflow-hidden bg-gray-100">
           {/* Header - Week Navigation */}
           <WeekNavigation
             currentWeekStart={currentWeekStart}
