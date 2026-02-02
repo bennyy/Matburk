@@ -1,17 +1,12 @@
 import { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import { startOfWeek, endOfWeek, format, addWeeks, subWeeks } from 'date-fns';
-import { Plus, Settings, X, AlertCircle, Info } from 'lucide-react';
+import { Plus, Settings, X } from 'lucide-react';
+import { useAuth, useUser } from '@clerk/clerk-react';
+import { SignIn } from '@clerk/clerk-react';
 import PlannerGrid from './components/PlannerGrid';
 import AddRecipe from './components/AddRecipe';
 import PlanSettingsModal from './components/PlanSettingsModal';
-import {
-  auth,
-  logout,
-  onAuthStateChanged,
-  signInWithGoogle,
-  signInWithEmailPassword,
-} from './firebase';
 
 const API_URL = import.meta.env.VITE_API_URL || '/api';
 
@@ -24,12 +19,13 @@ const API_URL = import.meta.env.VITE_API_URL || '/api';
  * - Per-plan recipes and meal slots
  */
 function App() {
+  // Clerk auth hooks
+  const { getToken } = useAuth();
+  const { user: clerkUser, isLoaded, isSignedIn } = useUser();
+
   // Auth state
   const [user, setUser] = useState(null);
-  const [authReady, setAuthReady] = useState(false);
   const [authError, setAuthError] = useState(null);
-  const [loginEmail, setLoginEmail] = useState('');
-  const [loginPassword, setLoginPassword] = useState('');
   const [joinMessage, setJoinMessage] = useState(null);
 
   // Plan management
@@ -64,11 +60,13 @@ function App() {
     B: 'Person B',
   });
 
-  // Firebase auth listener will be declared below, after fetchMealPlans
-
-  // Fetch list of user's meal plans with retry logic
+  // Fetch list of user's meal plans
   const fetchMealPlans = useCallback(async () => {
     try {
+      const token = await getToken();
+      if (token) {
+        axios.defaults.headers.common.Authorization = `Bearer ${token}`;
+      }
       const res = await axios.get(`${API_URL}/plans`);
       setMealPlans(res.data);
 
@@ -82,31 +80,8 @@ function App() {
       }
     } catch (error) {
       console.error('Kunde inte hämta planer', error);
-
-      // Retry på 401 om vi har en användare
-      if (error.response?.status === 401 && auth.currentUser) {
-        console.log('401 error, retrying with fresh token...');
-        try {
-          const token = await auth.currentUser.getIdToken(true);
-          axios.defaults.headers.common.Authorization = `Bearer ${token}`;
-          const retryRes = await axios.get(`${API_URL}/plans`);
-          setMealPlans(retryRes.data);
-
-          const currentExists = retryRes.data.some(
-            (p) => p.id === selectedPlanId
-          );
-          if (retryRes.data.length > 0 && (!selectedPlanId || !currentExists)) {
-            setSelectedPlanId(retryRes.data[0].id);
-          }
-          if (retryRes.data.length === 0) {
-            setSelectedPlanId(null);
-          }
-        } catch (retryError) {
-          console.error('Retry också misslyckades:', retryError);
-        }
-      }
     }
-  }, [selectedPlanId]);
+  }, [selectedPlanId, getToken]);
 
   // Save selected plan to localStorage whenever it changes
   useEffect(() => {
@@ -115,71 +90,49 @@ function App() {
     }
   }, [selectedPlanId]);
 
-  // Firebase auth listener - förbättrad token-hantering
+  // Clerk auth effect - handle authentication and token setup
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-      try {
-        if (firebaseUser) {
-          // Vänta på att token blir tillgänglig
-          let retries = 5;
-          let token = null;
+    const setupAuth = async () => {
+      if (!isLoaded) return;
 
-          while (retries > 0 && !token) {
-            try {
-              token = await firebaseUser.getIdToken(true); // Force refresh
-              break;
-            } catch (err) {
-              console.log(`Token retry ${6 - retries}/5`, err);
-              retries--;
-              if (retries > 0) {
-                await new Promise((resolve) => setTimeout(resolve, 200));
-              }
-            }
-          }
-
+      if (isSignedIn && clerkUser) {
+        try {
+          // Get Clerk token and set up axios header
+          const token = await getToken();
           if (token) {
             axios.defaults.headers.common.Authorization = `Bearer ${token}`;
-            setUser({ uid: firebaseUser.uid, email: firebaseUser.email });
-
-            // Register user and load plans
-            try {
-              await axios.post(`${API_URL}/auth/register`);
-              await fetchMealPlans();
-            } catch (error) {
-              console.error('Failed to register/load plans:', error);
-              // Retry efter kort delay
-              setTimeout(async () => {
-                try {
-                  await axios.post(`${API_URL}/auth/register`);
-                  await fetchMealPlans();
-                } catch (retryError) {
-                  console.error('Retry failed:', retryError);
-                }
-              }, 1000);
-            }
-          } else {
-            console.error('Could not get Firebase token after retries');
-            setAuthError(
-              'Kunde inte hämta autentisering. Försök logga in igen.'
-            );
           }
-        } else {
-          delete axios.defaults.headers.common.Authorization;
-          setUser(null);
-          setMealPlans([]);
-          setSelectedPlanId(null);
-          setAuthError(null);
-        }
-      } catch (error) {
-        console.error('Auth state change error:', error);
-        setAuthError('Inloggningsfel. Försök igen.');
-      } finally {
-        setAuthReady(true);
-      }
-    });
 
-    return () => unsubscribe();
-  }, [fetchMealPlans]);
+          // Set user state
+          setUser({
+            uid: clerkUser.id,
+            email:
+              clerkUser.emailAddresses?.[0]?.emailAddress || clerkUser.username,
+          });
+
+          // Register user and load plans
+          try {
+            await axios.post(`${API_URL}/auth/register`);
+            await fetchMealPlans();
+          } catch (error) {
+            console.error('Failed to register/load plans:', error);
+          }
+        } catch (error) {
+          console.error('Auth setup error:', error);
+          setAuthError('Inloggningsfel. Försök igen.');
+        }
+      } else {
+        // User is not signed in
+        delete axios.defaults.headers.common.Authorization;
+        setUser(null);
+        setMealPlans([]);
+        setSelectedPlanId(null);
+        setAuthError(null);
+      }
+    };
+
+    setupAuth();
+  }, [isLoaded, isSignedIn, clerkUser, getToken, fetchMealPlans]);
 
   // Handle deep-link join: /join/<token>
   useEffect(() => {
@@ -266,11 +219,11 @@ function App() {
 
   // Fetch data when selected plan or week changes (only if user is authenticated)
   useEffect(() => {
-    if (!user || !authReady) return;
+    if (!user) return;
     fetchRecipes();
     fetchPlanSlots();
     fetchSettings();
-  }, [fetchRecipes, fetchPlanSlots, fetchSettings, user, authReady]);
+  }, [fetchRecipes, fetchPlanSlots, fetchSettings, user]);
 
   // Plan handlers
   const handleSelectPlan = (planId) => {
@@ -335,40 +288,8 @@ function App() {
   const goToday = () =>
     setCurrentWeekStart(startOfWeek(new Date(), { weekStartsOn: 1 }));
 
-  // Auth handlers
-  const handleLogin = async () => {
-    try {
-      setAuthError(null);
-      await signInWithGoogle();
-    } catch (error) {
-      console.error('Inloggning misslyckades', error);
-      setAuthError('Inloggning misslyckades. Försök igen.');
-    }
-  };
-
-  const handleLoginEmulator = async () => {
-    try {
-      setAuthError(null);
-      await signInWithEmailPassword(loginEmail, loginPassword);
-    } catch (error) {
-      console.error('Inloggning (emulator) misslyckades', error);
-      setAuthError('Inloggning misslyckades. Kontrollera e-post och lösenord.');
-    }
-  };
-
-  const handleLogout = async () => {
-    try {
-      await logout();
-      setRecipes([]);
-      setPlan([]);
-      setMealPlans([]);
-    } catch (error) {
-      console.error('Kunde inte logga ut', error);
-    }
-  };
-
   // Loading screen
-  if (!authReady) {
+  if (!isLoaded) {
     return (
       <div className="flex items-center justify-center h-screen">
         <p className="text-lg font-semibold">Läser in...</p>
@@ -380,7 +301,7 @@ function App() {
   if (!user) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-orange-100 via-yellow-50 to-green-100 flex items-center justify-center p-4">
-        <div className="max-w-md w-full">
+        <div className="flex flex-col items-center">
           {/* Header with icon */}
           <div className="text-center mb-8">
             <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-orange-400 to-red-500 rounded-full mb-4 shadow-lg">
@@ -392,109 +313,16 @@ function App() {
             <p className="text-gray-600">- - -</p>
           </div>
 
-          {/* Login Card */}
-          <div className="bg-white rounded-2xl shadow-xl p-8 border border-gray-100">
-            {/* Error Messages */}
-            {authError && (
-              <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
-                <div className="flex items-center">
-                  <AlertCircle className="w-5 h-5 text-red-500 mr-2" />
-                  <p className="text-red-700 text-sm">{authError}</p>
-                </div>
-              </div>
-            )}
-
-            {joinMessage && (
-              <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                <div className="flex items-center">
-                  <Info className="w-5 h-5 text-blue-500 mr-2" />
-                  <p className="text-blue-700 text-sm">{joinMessage}</p>
-                </div>
-              </div>
-            )}
-
-            {/* Login Form */}
-            {auth.emulatorConfig ? (
-              <div>
-                <h2 className="text-xl font-semibold text-gray-800 mb-6 text-center">
-                  Logga in (Testläge)
-                </h2>
-                <form
-                  onSubmit={(e) => {
-                    e.preventDefault();
-                    handleLoginEmulator();
-                  }}
-                  className="space-y-4"
-                >
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      E-postadress
-                    </label>
-                    <input
-                      type="email"
-                      value={loginEmail}
-                      onChange={(e) => setLoginEmail(e.target.value)}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all"
-                      placeholder="test@example.com"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Lösenord
-                    </label>
-                    <input
-                      type="password"
-                      value={loginPassword}
-                      onChange={(e) => setLoginPassword(e.target.value)}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all"
-                      placeholder="minst 6 tecken"
-                      required
-                    />
-                  </div>
-                  <button
-                    type="submit"
-                    className="w-full bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white font-semibold py-3 px-4 rounded-lg transition-all transform hover:scale-105 shadow-lg"
-                  >
-                    Logga in
-                  </button>
-                </form>
-                <p className="text-gray-500 text-sm mt-4 text-center">
-                  Skapa/hantera testkonton i Firebase Emulator UI
-                </p>
-              </div>
-            ) : (
-              <div>
-                <h2 className="text-xl font-semibold text-gray-800 mb-6 text-center">
-                  Välkommen tillbaka
-                </h2>
-                <button
-                  onClick={handleLogin}
-                  className="w-full bg-white border-2 border-gray-300 hover:border-gray-400 text-gray-700 font-semibold py-3 px-4 rounded-lg transition-all transform hover:scale-105 shadow-lg flex items-center justify-center space-x-3"
-                >
-                  <svg className="w-5 h-5" viewBox="0 0 24 24">
-                    <path
-                      fill="#4285F4"
-                      d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-                    />
-                    <path
-                      fill="#34A853"
-                      d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-                    />
-                    <path
-                      fill="#FBBC05"
-                      d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
-                    />
-                    <path
-                      fill="#EA4335"
-                      d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
-                    />
-                  </svg>
-                  <span>Logga in med Google</span>
-                </button>
-              </div>
-            )}
-          </div>
+          {/* Clerk SignIn Component */}
+          <SignIn
+            appearance={{
+              elements: {
+                rootBox: 'w-full max-w-md',
+                card: 'rounded-2xl shadow-xl border border-gray-100',
+              },
+            }}
+            redirectUrl="/"
+          />
 
           {/* Footer */}
           <div className="text-center mt-6">
@@ -545,7 +373,6 @@ function App() {
             apiUrl={API_URL}
             onUpdateNames={handleUpdateSettings}
             onUpdatePlanName={handleUpdatePlanName}
-            onLogout={handleLogout}
           />
         )}
       </div>
@@ -641,7 +468,6 @@ function App() {
           apiUrl={API_URL}
           onUpdateNames={handleUpdateSettings}
           onUpdatePlanName={handleUpdatePlanName}
-          onLogout={handleLogout}
         />
       )}
       {selectedPlanId && (

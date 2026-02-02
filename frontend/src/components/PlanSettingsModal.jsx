@@ -1,5 +1,6 @@
 import { useState, useCallback, useEffect } from 'react';
 import axios from 'axios';
+import { SignOutButton } from '@clerk/clerk-react';
 import {
   X,
   Archive,
@@ -34,7 +35,6 @@ function PlanSettingsModal({
   apiUrl,
   onUpdateNames,
   onUpdatePlanName,
-  onLogout,
 }) {
   const [activeTab, setActiveTab] = useState('plans'); // 'plans' | 'share' | 'settings' | 'account'
 
@@ -136,7 +136,7 @@ function PlanSettingsModal({
         <div className="flex-1 overflow-y-auto p-4 sm:p-6 bg-gray-50 min-h-0">
           {activeTab === 'plans' && (
             <div className="max-w-3xl">
-              <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-6">
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
                 <p className="text-sm text-blue-800 flex items-start gap-2">
                   <Info className="w-5 h-5 mt-0.5 flex-shrink-0" />
                   <span>
@@ -185,9 +185,7 @@ function PlanSettingsModal({
             />
           )}
 
-          {activeTab === 'account' && (
-            <AccountTabContent user={user} onLogout={onLogout} />
-          )}
+          {activeTab === 'account' && <AccountTabContent user={user} />}
         </div>
       </div>
     </div>
@@ -313,7 +311,7 @@ function SharePlanModalContent({
 
   return (
     <div className="max-w-3xl">
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
         <h3 className="text-2xl font-bold text-gray-900 mb-2">{planName}</h3>
         <p className="text-sm text-gray-600">
           Dela denna plan med andra eller lämna planen
@@ -321,21 +319,21 @@ function SharePlanModalContent({
       </div>
 
       {error && (
-        <div className="bg-red-50 border border-red-200 rounded-xl p-4 mb-4 flex items-start gap-3 animate-slideDown">
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4 flex items-start gap-3 animate-slideDown">
           <AlertCircle className="w-5 h-5 text-red-600 mt-0.5 flex-shrink-0" />
           <p className="text-red-800 text-sm flex-1">{error}</p>
         </div>
       )}
 
       {success && (
-        <div className="bg-green-50 border border-green-200 rounded-xl p-4 mb-4 flex items-start gap-3 animate-slideDown">
+        <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-4 flex items-start gap-3 animate-slideDown">
           <CheckCircle className="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" />
           <p className="text-green-800 text-sm flex-1">{success}</p>
         </div>
       )}
 
       {/* Universal view link */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
         <div className="flex items-center gap-3 mb-4">
           <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0">
             <Eye className="w-6 h-6 text-green-600" />
@@ -407,7 +405,7 @@ function SharePlanModalContent({
       </div>
 
       {/* One-time edit invites */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
         <div className="flex items-center gap-3 mb-4">
           <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
             <Edit3 className="w-6 h-6 text-blue-600" />
@@ -501,7 +499,7 @@ function SharePlanModalContent({
       </div>
 
       {/* Danger zone: leave plan */}
-      <div className="bg-red-50 rounded-xl border-2 border-red-200 p-6">
+      <div className="bg-red-50 rounded-lg border border-red-200 p-6">
         <div className="flex items-start gap-3">
           <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center flex-shrink-0">
             <AlertCircle className="w-6 h-6 text-red-600" />
@@ -607,14 +605,14 @@ function SettingsTabContent({
   return (
     <div className="max-w-3xl">
       {success && (
-        <div className="bg-green-50 border border-green-200 rounded-xl p-4 mb-6 flex items-start gap-3 animate-slideDown">
+        <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6 flex items-start gap-3 animate-slideDown">
           <CheckCircle className="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" />
           <p className="text-green-800 text-sm flex-1">{success}</p>
         </div>
       )}
 
       {/* Plan name section */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
         <div className="flex items-center gap-3 mb-4">
           <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
             <Tag className="w-6 h-6 text-blue-600" />
@@ -637,7 +635,7 @@ function SettingsTabContent({
       {/* Person names section */}
       <form
         onSubmit={handleSubmit}
-        className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6"
+        className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6"
       >
         <div className="flex items-center gap-3 mb-6">
           <div className="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center flex-shrink-0">
@@ -699,7 +697,7 @@ function SettingsTabContent({
 
       {/* Users list */}
       {users.length > 0 && (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
           <div className="flex items-center gap-3 mb-4">
             <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0">
               <Users className="w-6 h-6 text-green-600" />
@@ -785,10 +783,10 @@ function SettingsTabContent({
   );
 }
 
-function AccountTabContent({ user, onLogout }) {
+function AccountTabContent({ user }) {
   return (
     <div className="max-w-3xl">
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
         <div className="flex items-center gap-3 mb-4">
           <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
             <User className="w-6 h-6 text-blue-600" />
@@ -815,7 +813,7 @@ function AccountTabContent({ user, onLogout }) {
         </div>
       </div>
 
-      <div className="bg-red-50 rounded-xl border-2 border-red-200 p-6">
+      <div className="bg-red-50 rounded-lg border border-red-200 p-6">
         <div className="flex items-start gap-3">
           <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center flex-shrink-0">
             <LogOut className="w-6 h-6 text-red-600" />
@@ -825,13 +823,12 @@ function AccountTabContent({ user, onLogout }) {
             <p className="text-sm text-red-700 mb-4">
               Du kommer att loggas ut från din session
             </p>
-            <button
-              onClick={onLogout}
-              className="w-full bg-red-600 hover:bg-red-700 text-white px-4 py-3 rounded-lg font-semibold transition-all duration-200 shadow-sm hover:shadow-md flex items-center justify-center gap-2"
-            >
-              <LogOut className="w-5 h-5" />
-              Logga ut
-            </button>
+            <SignOutButton>
+              <button className="w-full bg-red-600 hover:bg-red-700 text-white px-4 py-3 rounded-lg font-semibold transition-all duration-200 shadow-sm hover:shadow-md flex items-center justify-center gap-2">
+                <LogOut className="w-5 h-5" />
+                Logga ut
+              </button>
+            </SignOutButton>
           </div>
         </div>
       </div>

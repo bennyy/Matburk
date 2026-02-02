@@ -9,7 +9,7 @@ I just wanted a simple weekly meal prep planner, and this is the result.
 
 **Matplanerare is now protected with Firebase Authentication.** Users must log in with their Google account to access the app.
 
-→ **Setup instructions:** See [FIREBASE_SETUP.md](FIREBASE_SETUP.md) for detailed configuration steps.
+→ **Setup instructions:** See [clerk_SETUP.md](clerk_SETUP.md) for detailed configuration steps.
 
 # Home Meal Planner
 
