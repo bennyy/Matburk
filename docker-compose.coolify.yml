@@ -10,6 +10,8 @@ services:
       MATBURK_DATABASE_URL: ${MATBURK_DATABASE_URL:-sqlite:////app/data/matplanerare.db}
       MATBURK_DATABASE_TYPE: ${MATBURK_DATABASE_TYPE:-sqlite}
       ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-https://yourdomain.com}
+      CLERK_SECRET_KEY: ${CLERK_SECRET_KEY}
+      CLERK_PUBLIC_KEY_BASE64: ${CLERK_PUBLIC_KEY_BASE64}
     volumes:
       - ./backend/uploads:/app/uploads
       - ./backend/data:/app/data
@@ -44,6 +46,8 @@ services:
       - "coolify.proxy=true"
       - "coolify.port=3000"
       - "traefik.http.services.frontend.loadbalancer.server.port=3000"
+    environment:
+      - VITE_CLERK_PUBLISHABLE_KEY=${VITE_CLERK_PUBLISHABLE_KEY}
     healthcheck:
       test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://127.0.0.1:3000"]
       interval: 30s
