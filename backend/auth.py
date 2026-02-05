@@ -12,7 +12,6 @@ CLERK_PUBLIC_KEY_BASE64 = os.getenv("CLERK_PUBLIC_KEY_BASE64")
 
 if CLERK_PUBLIC_KEY_BASE64:
     CLERK_PUBLIC_KEY = base64.b64decode(CLERK_PUBLIC_KEY_BASE64).decode("utf-8")
-    print(CLERK_PUBLIC_KEY)
 else:
     raise RuntimeError("CLERK_PUBLIC_KEY_BASE64 environment variable is not set")
 
@@ -47,7 +46,6 @@ async def verify_token(
             headers={"WWW-Authenticate": "Bearer"},
         )
     except jwt.InvalidTokenError:
-        print("INVALID TOKEN")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid token",

@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import { startOfWeek, endOfWeek, format, addWeeks, subWeeks } from 'date-fns';
 import { Plus, Settings, X } from 'lucide-react';
-import { useAuth, useUser } from '@clerk/clerk-react';
+import { useAuth, useUser, useClerk } from '@clerk/clerk-react';
 import { SignIn } from '@clerk/clerk-react';
 import PlannerGrid from './components/PlannerGrid';
 import AddRecipe from './components/AddRecipe';
@@ -22,6 +22,7 @@ function App() {
   // Clerk auth hooks
   const { getToken } = useAuth();
   const { user: clerkUser, isLoaded, isSignedIn } = useUser();
+  const { signOut } = useClerk();
 
   // Auth state
   const [user, setUser] = useState(null);
@@ -73,10 +74,15 @@ function App() {
       // Auto-select first plan if available
       const currentExists = res.data.some((p) => p.id === selectedPlanId);
       if (res.data.length > 0 && (!selectedPlanId || !currentExists)) {
+        // If saved plan doesn't exist, clear it and select first plan
+        if (selectedPlanId && !currentExists) {
+          localStorage.removeItem('selectedPlanId');
+        }
         setSelectedPlanId(res.data[0].id);
       }
       if (res.data.length === 0) {
         setSelectedPlanId(null);
+        localStorage.removeItem('selectedPlanId');
       }
     } catch (error) {
       console.error('Kunde inte hämta planer', error);
@@ -89,6 +95,27 @@ function App() {
       localStorage.setItem('selectedPlanId', selectedPlanId.toString());
     }
   }, [selectedPlanId]);
+
+  // Setup axios interceptor to handle 401 errors globally
+  useEffect(() => {
+    const interceptor = axios.interceptors.response.use(
+      (response) => response,
+      async (error) => {
+        // Only sign out on 401 (invalid/expired token), not 403 (no permission)
+        if (error.response?.status === 401) {
+          console.error('Backend authentication failed (401), signing out...');
+          localStorage.removeItem('selectedPlanId');
+          await signOut();
+        }
+        return Promise.reject(error);
+      }
+    );
+
+    // Cleanup interceptor on unmount
+    return () => {
+      axios.interceptors.response.eject(interceptor);
+    };
+  }, [signOut]);
 
   // Clerk auth effect - handle authentication and token setup
   useEffect(() => {
@@ -116,6 +143,13 @@ function App() {
             await fetchMealPlans();
           } catch (error) {
             console.error('Failed to register/load plans:', error);
+            // Only sign out on 401 (invalid token)
+            if (error.response?.status === 401) {
+              console.error('Backend authentication failed (401), signing out...');
+              localStorage.removeItem('selectedPlanId');
+              await signOut();
+              return;
+            }
           }
         } catch (error) {
           console.error('Auth setup error:', error);
@@ -128,11 +162,12 @@ function App() {
         setMealPlans([]);
         setSelectedPlanId(null);
         setAuthError(null);
+        localStorage.removeItem('selectedPlanId');
       }
     };
 
     setupAuth();
-  }, [isLoaded, isSignedIn, clerkUser, getToken, fetchMealPlans]);
+  }, [isLoaded, isSignedIn, clerkUser, getToken, fetchMealPlans, signOut]);
 
   // Handle deep-link join: /join/<token>
   useEffect(() => {
@@ -217,13 +252,21 @@ function App() {
     }
   }, [selectedPlanId]);
 
-  // Fetch data when selected plan or week changes (only if user is authenticated)
+  // Fetch data when selected plan or week changes (only if user is authenticated and plan exists)
   useEffect(() => {
-    if (!user) return;
+    if (!user || !selectedPlanId) return;
+    
+    // Only fetch if the selected plan exists in mealPlans (to avoid 403 on invalid/deleted plans)
+    const planExists = mealPlans.some((p) => p.id === selectedPlanId);
+    if (!planExists && mealPlans.length > 0) {
+      // Plan doesn't exist, wait for fetchMealPlans to fix it
+      return;
+    }
+    
     fetchRecipes();
     fetchPlanSlots();
     fetchSettings();
-  }, [fetchRecipes, fetchPlanSlots, fetchSettings, user]);
+  }, [fetchRecipes, fetchPlanSlots, fetchSettings, user, selectedPlanId, mealPlans]);
 
   // Plan handlers
   const handleSelectPlan = (planId) => {
@@ -375,6 +418,24 @@ function App() {
             onUpdatePlanName={handleUpdatePlanName}
           />
         )}
+      </div>
+    );
+  }
+
+  // If Clerk is loaded and user is not signed in, show login page
+  if (isLoaded && !isSignedIn) {
+    return (
+      <div className="h-screen flex items-center justify-center bg-gray-50">
+        <SignIn />
+      </div>
+    );
+  }
+
+  // Show loading while Clerk is initializing
+  if (!isLoaded) {
+    return (
+      <div className="h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-gray-600">Laddar...</div>
       </div>
     );
   }
