@@ -34,6 +34,9 @@ export default function LibraryTab({
   onViewRecipe,
   onVote,
 }) {
+  const isGridView =
+    viewMode === VIEW_MODES.DETAILED || viewMode === VIEW_MODES.COMPACT;
+
   return (
     <div className="flex-1 overflow-y-auto p-4 bg-gray-50 flex flex-col">
       {/* Search Bar */}
@@ -186,7 +189,13 @@ export default function LibraryTab({
       )}
 
       {/* Recipe List */}
-      <div className="space-y-1.5 flex-1">
+      <div
+        className={
+          isGridView
+            ? 'grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-2.5 flex-1 content-start'
+            : 'space-y-1.5 flex-1'
+        }
+      >
         {filteredRecipes.length === 0 ? (
           <div className="text-center text-gray-400 text-sm mt-8 py-6 px-4 bg-white rounded-lg border border-dashed border-gray-200">
             <BookOpen className="w-8 h-8 mx-auto mb-2 text-gray-300" />

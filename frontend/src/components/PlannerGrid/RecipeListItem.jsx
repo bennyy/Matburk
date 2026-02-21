@@ -1,4 +1,11 @@
-import { ChefHat, Heart, Plus, Calendar, FileText, UtensilsCrossed } from 'lucide-react';
+import {
+  ChefHat,
+  Heart,
+  Plus,
+  Calendar,
+  FileText,
+  UtensilsCrossed,
+} from 'lucide-react';
 
 /**
  * RecipeListItem - Individual recipe in the library list
