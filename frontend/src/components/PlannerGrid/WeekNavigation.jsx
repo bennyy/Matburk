@@ -49,7 +49,7 @@ export default function WeekNavigation({
         </button>
       </div>
       <div className="flex gap-1 md:gap-2 items-center">
-        <button
+        {/* <button
           onClick={() => {
             const startStr = format(currentWeekStart, 'yyyy-MM-dd');
             const url = `/print.html?weekStart=${startStr}`;
@@ -61,7 +61,7 @@ export default function WeekNavigation({
         >
           <Printer className="w-4 h-4 md:w-5 md:h-5" />
           <span className="hidden sm:inline text-xs md:text-sm">Skriv ut</span>
-        </button>
+        </button> */}
         <button
           onClick={onNextWeek}
           className="p-1.5 md:p-2 hover:bg-white/20 rounded-lg text-white font-semibold flex items-center gap-1 transition-all"
