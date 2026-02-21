@@ -63,10 +63,6 @@ function App() {
   // Fetch list of user's meal plans
   const fetchMealPlans = useCallback(async () => {
     try {
-      const token = await getToken();
-      if (token) {
-        axios.defaults.headers.common.Authorization = `Bearer ${token}`;
-      }
       const res = await axios.get(`${API_URL}/plans`);
       setMealPlans(res.data);
 
@@ -86,7 +82,7 @@ function App() {
     } catch (error) {
       console.error('Kunde inte hämta planer', error);
     }
-  }, [selectedPlanId, getToken]);
+  }, [selectedPlanId]);
 
   // Save selected plan to localStorage whenever it changes
   useEffect(() => {
@@ -94,6 +90,42 @@ function App() {
       localStorage.setItem('selectedPlanId', selectedPlanId.toString());
     }
   }, [selectedPlanId]);
+
+  // Setup axios interceptor to attach fresh Clerk token on each API request
+  useEffect(() => {
+    const interceptor = axios.interceptors.request.use(
+      async (config) => {
+        const rawUrl = config.url ?? '';
+        const url = String(rawUrl);
+        const absoluteApiPrefix = API_URL.startsWith('/')
+          ? `${window.location.origin}${API_URL}`
+          : API_URL;
+        const isApiRequest =
+          url.startsWith(API_URL) ||
+          url.startsWith(absoluteApiPrefix);
+
+        if (!isApiRequest || !isSignedIn) {
+          return config;
+        }
+
+        const token = await getToken();
+
+        if (token) {
+          config.headers = config.headers ?? {};
+          config.headers.Authorization = `Bearer ${token}`;
+        } else if (config.headers?.Authorization) {
+          delete config.headers.Authorization;
+        }
+
+        return config;
+      },
+      (error) => Promise.reject(error)
+    );
+
+    return () => {
+      axios.interceptors.request.eject(interceptor);
+    };
+  }, [getToken, isSignedIn]);
 
   // Setup axios interceptor to handle 401 errors globally
   useEffect(() => {
@@ -123,12 +155,6 @@ function App() {
 
       if (isSignedIn && clerkUser) {
         try {
-          // Get Clerk token and set up axios header
-          const token = await getToken();
-          if (token) {
-            axios.defaults.headers.common.Authorization = `Bearer ${token}`;
-          }
-
           // Set user state
           setUser({
             uid: clerkUser.id,
@@ -168,7 +194,7 @@ function App() {
     };
 
     setupAuth();
-  }, [isLoaded, isSignedIn, clerkUser, getToken, fetchMealPlans, signOut]);
+  }, [isLoaded, isSignedIn, clerkUser, fetchMealPlans, signOut]);
 
   // Handle deep-link join: /join/<token>
   useEffect(() => {
