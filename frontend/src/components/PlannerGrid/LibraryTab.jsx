@@ -192,7 +192,7 @@ export default function LibraryTab({
       <div
         className={
           isGridView
-            ? 'grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-2.5 flex-1 content-start'
+            ? 'grid [grid-template-columns:repeat(auto-fit,minmax(220px,1fr))] gap-2.5 flex-1 content-start'
             : 'space-y-1.5 flex-1'
         }
       >
