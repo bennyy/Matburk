@@ -44,7 +44,6 @@ function App() {
 
   // UI state
   const [showAddModal, setShowAddModal] = useState(false);
-  const [mealPlanner, setMealPlanner] = useState(true);
 
   // Week navigation
   const [currentWeekStart, setCurrentWeekStart] = useState(
@@ -145,7 +144,9 @@ function App() {
             console.error('Failed to register/load plans:', error);
             // Only sign out on 401 (invalid token)
             if (error.response?.status === 401) {
-              console.error('Backend authentication failed (401), signing out...');
+              console.error(
+                'Backend authentication failed (401), signing out...'
+              );
               localStorage.removeItem('selectedPlanId');
               await signOut();
               return;
@@ -255,18 +256,25 @@ function App() {
   // Fetch data when selected plan or week changes (only if user is authenticated and plan exists)
   useEffect(() => {
     if (!user || !selectedPlanId) return;
-    
+
     // Only fetch if the selected plan exists in mealPlans (to avoid 403 on invalid/deleted plans)
     const planExists = mealPlans.some((p) => p.id === selectedPlanId);
     if (!planExists && mealPlans.length > 0) {
       // Plan doesn't exist, wait for fetchMealPlans to fix it
       return;
     }
-    
+
     fetchRecipes();
     fetchPlanSlots();
     fetchSettings();
-  }, [fetchRecipes, fetchPlanSlots, fetchSettings, user, selectedPlanId, mealPlans]);
+  }, [
+    fetchRecipes,
+    fetchPlanSlots,
+    fetchSettings,
+    user,
+    selectedPlanId,
+    mealPlans,
+  ]);
 
   // Plan handlers
   const handleSelectPlan = (planId) => {
@@ -550,8 +558,6 @@ function App() {
             onPrevWeek={prevWeek}
             onGoToday={goToday}
             peopleNames={peopleNames}
-            mealPlanner={mealPlanner}
-            setMealPlanner={setMealPlanner}
           />
         </main>
       )}
